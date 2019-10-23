@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct FieldAttribute {
     pub size: Option<i32>,
@@ -69,7 +67,7 @@ pub trait SQLTable: Sized {
         )
     }
 
-    fn save_query_with_params(self) -> (String, HashMap<String, Self::ValueType>) {
+    fn save_query_with_params(self) -> (String, Vec<(String, Self::ValueType)>) {
         let pairs = self.map_to_sql();
         let keys = pairs.iter().map(|(k, _)| k).collect::<Vec<_>>();
 
@@ -87,7 +85,7 @@ pub trait SQLTable: Sized {
                     .as_slice()
                     .join(", "),
             ),
-            pairs.into_iter().collect::<HashMap<_, _>>(),
+            pairs,
         )
     }
 }
