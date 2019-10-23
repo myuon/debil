@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct FieldAttribute {
     pub size: Option<i32>,
@@ -17,7 +19,7 @@ impl Default for FieldAttribute {
     }
 }
 
-pub trait SQLTable {
+pub trait SQLTable: Sized {
     type ValueType;
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)>;
@@ -25,7 +27,7 @@ pub trait SQLTable {
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
     fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self;
 
-    fn create_table(ty: std::marker::PhantomData<Self>) -> String {
+    fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
         let schema = SQLTable::schema_of(ty);
 
         format!(
@@ -64,6 +66,28 @@ pub trait SQLTable {
                 .collect::<Vec<_>>()
                 .as_slice()
                 .join(", ")
+        )
+    }
+
+    fn save_query_with_params(self) -> (String, HashMap<String, Self::ValueType>) {
+        let pairs = self.map_to_sql();
+        let keys = pairs.iter().map(|(k, _)| k).collect::<Vec<_>>();
+
+        (
+            format!(
+                "INSERT INTO {} ({}) VALUES ({})",
+                Self::table_name(std::marker::PhantomData::<Self>),
+                keys.iter()
+                    .map(|k| k.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                keys.iter()
+                    .map(|s| format!(":{}", s))
+                    .collect::<Vec<_>>()
+                    .as_slice()
+                    .join(", "),
+            ),
+            pairs.into_iter().collect::<HashMap<_, _>>(),
         )
     }
 }

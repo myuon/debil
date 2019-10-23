@@ -1,6 +1,6 @@
 use debil::*;
 
-#[derive(Table, PartialEq, Debug)]
+#[derive(Table, PartialEq, Debug, Clone)]
 #[sql(table_name = "ex_1", sql_type = "Vec<u8>")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
@@ -48,12 +48,16 @@ fn it_derives_sql_table() {
     );
 
     assert_eq!(
-        ex1.map_to_sql(),
+        ex1.clone().map_to_sql(),
         vec![
             ("field1".to_string(), SQLValue::serialize("aaa".to_string())),
             ("aaaa".to_string(), SQLValue::serialize(10)),
             ("pk".to_string(), SQLValue::serialize(1))
         ]
+    );
+    assert_eq!(
+        ex1.clone().save_query_with_params().0,
+        "INSERT INTO ex_1 (field1, aaaa, pk) VALUES (:field1, :aaaa, :pk)"
     );
 
     let ex2: Ex1 = SQLTable::map_from_sql(
@@ -78,7 +82,7 @@ fn it_derives_sql_table() {
     );
 
     assert_eq!(
-        SQLTable::create_table(std::marker::PhantomData::<Ex1>),
+        SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
         "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int PRIMARY KEY)"
     );
 }
