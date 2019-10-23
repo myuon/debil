@@ -188,7 +188,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let field_struct = get_fields_from_datastruct(input.data);
     let push_field_names = field_struct
         .iter()
-        .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::serialize(self.#ident))); })
+        .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::<Self::ValueType>::serialize(self.#ident))); })
         .collect::<Vec<_>>();
     let push_column_schema = field_struct
         .iter()
@@ -200,7 +200,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             let size_unopt = size_opt.unwrap_or(0);
 
             quote! {
-                result.push((stringify!(#ident).to_string(), SQLValue::column_type(std::marker::PhantomData::<#ty>, #size_unopt), FieldAttribute {
+                result.push((stringify!(#ident).to_string(), SQLValue::<Self::ValueType>::column_type(std::marker::PhantomData::<#ty>, #size_unopt), FieldAttribute {
                     size: #size,
                     unique: #unique,
                     not_null: #not_null,
@@ -212,7 +212,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .iter()
         .map(|(ident, _, _)| {
             quote! {
-                #ident: SQLValue::deserialize(values.get(stringify!(#ident)).unwrap().clone()),
+                #ident: SQLValue::<Self::ValueType>::deserialize(values.get(stringify!(#ident)).unwrap().clone()),
             }
         })
         .collect::<Vec<_>>();
