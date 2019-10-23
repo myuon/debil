@@ -1,10 +1,9 @@
-use debil::binary::*;
 use debil::*;
 
 #[derive(Table, PartialEq, Debug)]
 #[sql(table_name = "ex_1", sql_type = "Vec<u8>")]
 struct Ex1 {
-    #[sql(size = 50)]
+    #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
     aaaa: i32,
 }
@@ -28,6 +27,8 @@ fn it_derives_sql_table() {
                 "varchar(50)".to_string(),
                 FieldAttribute {
                     size: Some(50),
+                    unique: Some(true),
+                    not_null: Some(true),
                     ..Default::default()
                 }
             ),
@@ -60,5 +61,10 @@ fn it_derives_sql_table() {
             field1: "piyo".to_string(),
             aaaa: -10000,
         }
-    )
+    );
+
+    assert_eq!(
+        SQLTable::create_table(std::marker::PhantomData::<Ex1>),
+        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int)"
+    );
 }
