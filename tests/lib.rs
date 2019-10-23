@@ -6,6 +6,8 @@ struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
     aaaa: i32,
+    #[sql(primary_key = true)]
+    pk: i32,
 }
 
 #[test]
@@ -13,6 +15,7 @@ fn it_derives_sql_table() {
     let ex1 = Ex1 {
         field1: "aaa".to_string(),
         aaaa: 10,
+        pk: 1,
     };
 
     assert_eq!(
@@ -32,7 +35,15 @@ fn it_derives_sql_table() {
                     ..Default::default()
                 }
             ),
-            ("aaaa".to_string(), "int".to_string(), Default::default())
+            ("aaaa".to_string(), "int".to_string(), Default::default()),
+            (
+                "pk".to_string(),
+                "int".to_string(),
+                FieldAttribute {
+                    primary_key: Some(true),
+                    ..Default::default()
+                }
+            ),
         ]
     );
 
@@ -40,7 +51,8 @@ fn it_derives_sql_table() {
         ex1.map_to_sql(),
         vec![
             ("field1".to_string(), SQLValue::serialize("aaa".to_string())),
-            ("aaaa".to_string(), SQLValue::serialize(10))
+            ("aaaa".to_string(), SQLValue::serialize(10)),
+            ("pk".to_string(), SQLValue::serialize(1))
         ]
     );
 
@@ -51,6 +63,7 @@ fn it_derives_sql_table() {
                 SQLValue::serialize("piyo".to_string()),
             ),
             ("aaaa".to_string(), SQLValue::serialize(-10000)),
+            ("pk".to_string(), SQLValue::serialize(200)),
         ]
         .into_iter()
         .collect(),
@@ -60,11 +73,12 @@ fn it_derives_sql_table() {
         Ex1 {
             field1: "piyo".to_string(),
             aaaa: -10000,
+            pk: 200,
         }
     );
 
     assert_eq!(
         SQLTable::create_table(std::marker::PhantomData::<Ex1>),
-        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int)"
+        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int PRIMARY KEY)"
     );
 }

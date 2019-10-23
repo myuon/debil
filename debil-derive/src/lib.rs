@@ -10,12 +10,6 @@ struct TableAttr {
     sql_type: proc_macro2::TokenStream,
 }
 
-struct FieldAttr {
-    size: proc_macro2::TokenStream,
-    not_null: proc_macro2::TokenStream,
-    unique: proc_macro2::TokenStream,
-}
-
 struct AttrInput {
     paren_token: syn::token::Paren,
     attrs: syn::punctuated::Punctuated<KeyValue, syn::Token![,]>,
@@ -197,6 +191,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             let size = option_to_quote(size_opt);
             let unique = option_to_quote(attr_map.get("unique").map(|v| v.clone().as_bool().unwrap()));
             let not_null = option_to_quote(attr_map.get("not_null").map(|v| v.clone().as_bool().unwrap()));
+            let primary_key = option_to_quote(attr_map.get("primary_key").map(|v| v.clone().as_bool().unwrap()));
             let size_unopt = size_opt.unwrap_or(0);
 
             quote! {
@@ -204,6 +199,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                     size: #size,
                     unique: #unique,
                     not_null: #not_null,
+                    primary_key: #primary_key,
                 }));
             }
         })
