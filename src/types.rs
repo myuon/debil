@@ -17,6 +17,39 @@ impl Default for FieldAttribute {
     }
 }
 
+pub fn create_column_query(
+    column_name: String,
+    column_type: String,
+    attr: FieldAttribute,
+) -> String {
+    [
+        &[column_name.as_str(), column_type.as_str()],
+        vec![
+            if attr.primary_key.unwrap_or(false) {
+                Some("PRIMARY KEY")
+            } else {
+                None
+            },
+            if attr.unique.unwrap_or(false) {
+                Some("UNIQUE")
+            } else {
+                None
+            },
+            if attr.not_null.unwrap_or(false) {
+                Some("NOT NULL")
+            } else {
+                None
+            },
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .as_slice(),
+    ]
+    .concat()
+    .join(" ")
+}
+
 pub trait SQLTable: Sized {
     type ValueType;
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
@@ -33,34 +66,7 @@ pub trait SQLTable: Sized {
             SQLTable::table_name(ty),
             schema
                 .into_iter()
-                .map(|(name, typ, attr)| {
-                    [
-                        &[name.as_str(), typ.as_str()],
-                        vec![
-                            if attr.primary_key.unwrap_or(false) {
-                                Some("PRIMARY KEY")
-                            } else {
-                                None
-                            },
-                            if attr.unique.unwrap_or(false) {
-                                Some("UNIQUE")
-                            } else {
-                                None
-                            },
-                            if attr.not_null.unwrap_or(false) {
-                                Some("NOT NULL")
-                            } else {
-                                None
-                            },
-                        ]
-                        .into_iter()
-                        .flatten()
-                        .collect::<Vec<_>>()
-                        .as_slice(),
-                    ]
-                    .concat()
-                    .join(" ")
-                })
+                .map(|(name, typ, attr)| create_column_query(name, typ, attr))
                 .collect::<Vec<_>>()
                 .as_slice()
                 .join(", ")
