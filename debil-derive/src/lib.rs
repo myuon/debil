@@ -173,6 +173,10 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let input = parse_macro_input!(input as DeriveInput);
 
     let ident = input.ident;
+    if input.attrs.is_empty() {
+        panic!("Currently, sql(table_name) and sql(sql_type) are required.");
+    }
+
     let attr_stream = input.attrs[0].tokens.clone();
     let table_attr = syn::parse2::<AttrInput>(attr_stream)
         .unwrap()
