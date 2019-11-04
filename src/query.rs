@@ -1,16 +1,22 @@
 pub struct QueryBuilder {
-    from: String,
+    from: Option<String>,
     wheres: Vec<String>,
     limit: Option<i32>,
 }
 
 impl QueryBuilder {
-    pub fn new(table_name: impl Into<String>) -> QueryBuilder {
+    pub fn new() -> QueryBuilder {
         QueryBuilder {
-            from: table_name.into(),
+            from: None,
             wheres: Vec::new(),
             limit: None,
         }
+    }
+
+    pub fn table(mut self, table_name: impl Into<String>) -> QueryBuilder {
+        self.from = Some(table_name.into());
+
+        self
     }
 
     pub fn wheres(mut self, cond: impl Into<String>) -> QueryBuilder {
@@ -26,7 +32,7 @@ impl QueryBuilder {
     }
 
     pub fn build(&self) -> String {
-        let from = format!("FROM {}", self.from);
+        let from = format!("FROM {}", self.from.clone().unwrap());
         let where_clause = format!("WHERE {}", self.wheres.as_slice().join(" AND "));
         let limit_clause = self
             .limit
@@ -54,13 +60,17 @@ impl QueryBuilder {
 
 #[test]
 fn query_with_build() {
-    assert_eq!(QueryBuilder::new("foo").build(), "SELECT * FROM foo");
     assert_eq!(
-        QueryBuilder::new("foo").wheres("bar = 10").build(),
+        QueryBuilder::new().table("foo").build(),
+        "SELECT * FROM foo"
+    );
+    assert_eq!(
+        QueryBuilder::new().table("foo").wheres("bar = 10").build(),
         "SELECT * FROM foo WHERE bar = 10"
     );
     assert_eq!(
-        QueryBuilder::new("foo")
+        QueryBuilder::new()
+            .table("foo")
             .wheres("bar = 10")
             .limit(10)
             .build(),
