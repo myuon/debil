@@ -28,8 +28,9 @@ impl QueryBuilder {
         self
     }
 
-    pub fn wheres(mut self, cond: impl Into<String>) -> QueryBuilder {
-        self.wheres.push(cond.into());
+    pub fn wheres<S: Into<String>>(mut self, cond: Vec<S>) -> QueryBuilder {
+        self.wheres
+            .append(&mut cond.into_iter().map(|v| v.into()).collect::<Vec<_>>());
 
         self
     }
@@ -97,15 +98,18 @@ fn query_with_build() {
         "SELECT a, b, c FROM foo"
     );
     assert_eq!(
-        QueryBuilder::new().table("foo").wheres("bar = 10").build(),
+        QueryBuilder::new()
+            .table("foo")
+            .wheres(vec!["bar = 10"])
+            .build(),
         "SELECT * FROM foo WHERE bar = 10"
     );
     assert_eq!(
         QueryBuilder::new()
             .table("foo")
-            .wheres("bar = 10")
+            .wheres(vec!["bar = 10", "baz = 20"])
             .limit(10)
             .build(),
-        "SELECT * FROM foo WHERE bar = 10 LIMIT 10"
+        "SELECT * FROM foo WHERE bar = 10 AND baz = 20 LIMIT 10"
     );
 }
