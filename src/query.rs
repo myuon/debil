@@ -1,4 +1,5 @@
 pub struct QueryBuilder {
+    selects: Vec<String>,
     from: Option<String>,
     wheres: Vec<String>,
     limit: Option<i32>,
@@ -7,6 +8,7 @@ pub struct QueryBuilder {
 impl QueryBuilder {
     pub fn new() -> QueryBuilder {
         QueryBuilder {
+            selects: vec![],
             from: None,
             wheres: Vec::new(),
             limit: None,
@@ -15,6 +17,12 @@ impl QueryBuilder {
 
     pub fn table(mut self, table_name: impl Into<String>) -> QueryBuilder {
         self.from = Some(table_name.into());
+
+        self
+    }
+
+    pub fn selects(mut self, selects: Vec<impl Into<String>>) -> QueryBuilder {
+        self.selects = selects.into_iter().map(|v| v.into()).collect::<Vec<_>>();
 
         self
     }
@@ -40,7 +48,15 @@ impl QueryBuilder {
             .unwrap_or("".to_string());
 
         [
-            "SELECT *",
+            format!(
+                "SELECT {}",
+                if self.selects.is_empty() {
+                    "*".to_string()
+                } else {
+                    self.selects.as_slice().join(", ")
+                }
+            )
+            .as_str(),
             from.as_str(),
             if !self.wheres.is_empty() {
                 where_clause.as_str()
@@ -63,6 +79,13 @@ fn query_with_build() {
     assert_eq!(
         QueryBuilder::new().table("foo").build(),
         "SELECT * FROM foo"
+    );
+    assert_eq!(
+        QueryBuilder::new()
+            .table("foo")
+            .selects(vec!["a", "b", "c"])
+            .build(),
+        "SELECT a, b, c FROM foo"
     );
     assert_eq!(
         QueryBuilder::new().table("foo").wheres("bar = 10").build(),
