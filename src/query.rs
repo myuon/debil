@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct QueryBuilder {
     selects: Vec<String>,
     from: Option<String>,
