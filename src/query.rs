@@ -73,6 +73,14 @@ impl QueryBuilder {
         .as_slice()
         .join(" ")
     }
+
+    pub fn execute<T: QueryExecutor<R>, R>(&self, executor: T) -> R {
+        executor.run(self.build())
+    }
+}
+
+pub trait QueryExecutor<R> {
+    fn run(&self, _: String) -> R;
 }
 
 #[test]
