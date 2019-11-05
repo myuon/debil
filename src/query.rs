@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 #[derive(Clone)]
 pub struct QueryBuilder {
     selects: Vec<String>,
@@ -75,13 +77,34 @@ impl QueryBuilder {
         .join(" ")
     }
 
-    pub fn execute<T: QueryExecutor<R>, R>(&self, executor: T) -> R {
-        executor.run(self.build())
+    pub async fn load<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<Vec<T>, E> {
+        executor.load(self.build()).await
+    }
+
+    pub async fn first<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<T, E> {
+        executor.first(self.build()).await
+    }
+
+    pub async fn execute<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<u64, E> {
+        executor.execute(self.build()).await
+    }
+
+    pub async fn save<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<(), E> {
+        executor.save(self.build()).await
+    }
+
+    pub async fn save_all<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<(), E> {
+        executor.save_all(self.build()).await
     }
 }
 
-pub trait QueryExecutor<R> {
-    fn run(&self, _: String) -> R;
+#[async_trait]
+pub trait QueryExecutor<T, E> {
+    async fn load(&self, _: String) -> Result<Vec<T>, E>;
+    async fn first(&self, _: String) -> Result<T, E>;
+    async fn execute(&self, _: String) -> Result<u64, E>;
+    async fn save(&self, _: String) -> Result<(), E>;
+    async fn save_all(&self, _: String) -> Result<(), E>;
 }
 
 #[test]

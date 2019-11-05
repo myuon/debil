@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 debil-derive = { path = "debil-derive" }
+async-trait = "0.1.17"
