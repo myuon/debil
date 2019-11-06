@@ -85,16 +85,16 @@ impl QueryBuilder {
         executor.first(self).await
     }
 
-    pub async fn execute<R: QueryExecutor<T, E>, T, E>(self, executor: &R) -> Result<u64, E> {
-        executor.execute(self).await
+    pub async fn save<R: QueryExecutor<T, E>, T, E>(self, executor: &R, data: T) -> Result<(), E> {
+        executor.save(self, data).await
     }
 
-    pub async fn save<R: QueryExecutor<T, E>, T, E>(self, executor: &R) -> Result<(), E> {
-        executor.save(self).await
-    }
-
-    pub async fn save_all<R: QueryExecutor<T, E>, T, E>(self, executor: &R) -> Result<(), E> {
-        executor.save_all(self).await
+    pub async fn save_all<R: QueryExecutor<T, E>, T, E>(
+        self,
+        executor: &R,
+        data: Vec<T>,
+    ) -> Result<(), E> {
+        executor.save_all(self, data).await
     }
 }
 
@@ -102,9 +102,8 @@ impl QueryBuilder {
 pub trait QueryExecutor<T, E> {
     async fn load(&self, builder: QueryBuilder) -> Result<Vec<T>, E>;
     async fn first(&self, builder: QueryBuilder) -> Result<T, E>;
-    async fn execute(&self, builder: QueryBuilder) -> Result<u64, E>;
-    async fn save(&self, builder: QueryBuilder) -> Result<(), E>;
-    async fn save_all(&self, builder: QueryBuilder) -> Result<(), E>;
+    async fn save(&self, builder: QueryBuilder, data: T) -> Result<(), E>;
+    async fn save_all(&self, builder: QueryBuilder, data: Vec<T>) -> Result<(), E>;
 }
 
 #[test]
