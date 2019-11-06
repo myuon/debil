@@ -77,23 +77,23 @@ impl QueryBuilder {
         .join(" ")
     }
 
-    pub async fn load<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<Vec<T>, E> {
+    pub async fn load<R: QueryExecutor<T, E>, T, E>(&self, executor: &R) -> Result<Vec<T>, E> {
         executor.load(self.build()).await
     }
 
-    pub async fn first<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<T, E> {
+    pub async fn first<R: QueryExecutor<T, E>, T, E>(&self, executor: &R) -> Result<T, E> {
         executor.first(self.build()).await
     }
 
-    pub async fn execute<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<u64, E> {
+    pub async fn execute<R: QueryExecutor<T, E>, T, E>(&self, executor: &R) -> Result<u64, E> {
         executor.execute(self.build()).await
     }
 
-    pub async fn save<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<(), E> {
+    pub async fn save<R: QueryExecutor<T, E>, T, E>(&self, executor: &R) -> Result<(), E> {
         executor.save(self.build()).await
     }
 
-    pub async fn save_all<R: QueryExecutor<T, E>, T, E>(&self, executor: R) -> Result<(), E> {
+    pub async fn save_all<R: QueryExecutor<T, E>, T, E>(&self, executor: &R) -> Result<(), E> {
         executor.save_all(self.build()).await
     }
 }
