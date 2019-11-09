@@ -1,11 +1,12 @@
 use async_trait::async_trait;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct QueryBuilder {
     selects: Vec<String>,
     from: Option<String>,
     wheres: Vec<String>,
     limit: Option<i32>,
+    inner_join: Option<(String, String, String)>,
 }
 
 impl QueryBuilder {
@@ -15,6 +16,7 @@ impl QueryBuilder {
             from: None,
             wheres: Vec::new(),
             limit: None,
+            inner_join: None,
         }
     }
 
@@ -43,8 +45,19 @@ impl QueryBuilder {
         self
     }
 
-    pub fn build(&self) -> String {
-        let from = format!("FROM {}", self.from.clone().unwrap());
+    pub fn inner_join(
+        mut self,
+        target_table: impl Into<String>,
+        on_fields: (impl Into<String>, impl Into<String>),
+    ) -> QueryBuilder {
+        self.inner_join = Some((target_table.into(), on_fields.0.into(), on_fields.1.into()));
+
+        self
+    }
+
+    pub fn build(self) -> String {
+        let table = self.from.unwrap();
+        let from = format!("FROM {}", table.clone());
         let where_clause = format!("WHERE {}", self.wheres.as_slice().join(" AND "));
         let limit_clause = self
             .limit
@@ -59,15 +72,22 @@ impl QueryBuilder {
                 } else {
                     self.selects.as_slice().join(", ")
                 }
-            )
-            .as_str(),
-            from.as_str(),
-            if !self.wheres.is_empty() {
-                where_clause.as_str()
+            ),
+            from,
+            if let Some((another_table, lhs, rhs)) = self.inner_join {
+                format!(
+                    "INNER JOIN {} ON {}.{} = {}.{}",
+                    another_table, table, lhs, another_table, rhs
+                )
             } else {
-                ""
+                String::new()
             },
-            limit_clause.as_str(),
+            if !self.wheres.is_empty() {
+                where_clause
+            } else {
+                String::new()
+            },
+            limit_clause,
         ]
         .into_iter()
         .filter(|s| s.len() != 0)
@@ -133,5 +153,12 @@ fn query_with_build() {
             .limit(10)
             .build(),
         "SELECT * FROM foo WHERE bar = 10 AND baz = 20 LIMIT 10"
+    );
+    assert_eq!(
+        QueryBuilder::new()
+            .table("foo")
+            .inner_join("bar", ("baz", "quux"))
+            .build(),
+        "SELECT * FROM foo INNER JOIN bar ON foo.baz = bar.quux"
     );
 }
