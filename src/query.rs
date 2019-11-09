@@ -1,12 +1,19 @@
 use async_trait::async_trait;
 
 #[derive(Clone, Debug)]
+pub enum JoinType {
+    Inner,
+    Left,
+    Right,
+}
+
+#[derive(Clone, Debug)]
 pub struct QueryBuilder {
     selects: Vec<String>,
     from: Option<String>,
     wheres: Vec<String>,
     limit: Option<i32>,
-    inner_join: Option<(String, String, String)>,
+    joins: Vec<(JoinType, String, String, String)>,
 }
 
 impl QueryBuilder {
@@ -16,7 +23,7 @@ impl QueryBuilder {
             from: None,
             wheres: Vec::new(),
             limit: None,
-            inner_join: None,
+            joins: vec![],
         }
     }
 
@@ -63,7 +70,42 @@ impl QueryBuilder {
         target_table: impl Into<String>,
         on_fields: (impl Into<String>, impl Into<String>),
     ) -> QueryBuilder {
-        self.inner_join = Some((target_table.into(), on_fields.0.into(), on_fields.1.into()));
+        self.joins.push((
+            JoinType::Inner,
+            target_table.into(),
+            on_fields.0.into(),
+            on_fields.1.into(),
+        ));
+
+        self
+    }
+
+    pub fn left_join(
+        mut self,
+        target_table: impl Into<String>,
+        on_fields: (impl Into<String>, impl Into<String>),
+    ) -> QueryBuilder {
+        self.joins.push((
+            JoinType::Left,
+            target_table.into(),
+            on_fields.0.into(),
+            on_fields.1.into(),
+        ));
+
+        self
+    }
+
+    pub fn right_join(
+        mut self,
+        target_table: impl Into<String>,
+        on_fields: (impl Into<String>, impl Into<String>),
+    ) -> QueryBuilder {
+        self.joins.push((
+            JoinType::Right,
+            target_table.into(),
+            on_fields.0.into(),
+            on_fields.1.into(),
+        ));
 
         self
     }
@@ -87,14 +129,26 @@ impl QueryBuilder {
                 }
             ),
             from,
-            if let Some((another_table, lhs, rhs)) = self.inner_join {
-                format!(
-                    "INNER JOIN {} ON {}.{} = {}.{}",
-                    another_table, table, lhs, another_table, rhs
-                )
-            } else {
-                String::new()
-            },
+            self.joins
+                .into_iter()
+                .map(|(jt, another_table, lhs, rhs)| {
+                    format!(
+                        "{} JOIN {} ON {}.{} = {}.{}",
+                        match jt {
+                            JoinType::Inner => "INNER",
+                            JoinType::Left => "LEFT",
+                            JoinType::Right => "RIGHT",
+                        },
+                        another_table,
+                        table,
+                        lhs,
+                        another_table,
+                        rhs
+                    )
+                })
+                .collect::<Vec<_>>()
+                .as_slice()
+                .join(" "),
             if !self.wheres.is_empty() {
                 where_clause
             } else {
@@ -173,5 +227,13 @@ fn query_with_build() {
             .inner_join("bar", ("baz", "quux"))
             .build(),
         "SELECT * FROM foo INNER JOIN bar ON foo.baz = bar.quux"
+    );
+    assert_eq!(
+        QueryBuilder::new()
+            .table("foo")
+            .inner_join("bar", ("baz", "quux"))
+            .left_join("bar2", ("baz2", "quux2"))
+            .build(),
+        "SELECT * FROM foo INNER JOIN bar ON foo.baz = bar.quux LEFT JOIN bar2 ON foo.baz2 = bar2.quux2"
     );
 }
