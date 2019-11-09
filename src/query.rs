@@ -32,9 +32,22 @@ impl QueryBuilder {
         self
     }
 
+    pub fn append_selects(mut self, selects: Vec<impl Into<String>>) -> QueryBuilder {
+        self.selects
+            .append(&mut selects.into_iter().map(|v| v.into()).collect::<Vec<_>>());
+
+        self
+    }
+
     pub fn wheres<S: Into<String>>(mut self, cond: Vec<S>) -> QueryBuilder {
         self.wheres
             .append(&mut cond.into_iter().map(|v| v.into()).collect::<Vec<_>>());
+
+        self
+    }
+
+    pub fn filter(mut self, cond: impl Into<String>) -> QueryBuilder {
+        self.wheres.push(cond.into());
 
         self
     }
