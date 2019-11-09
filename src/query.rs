@@ -14,6 +14,7 @@ pub struct QueryBuilder {
     wheres: Vec<String>,
     limit: Option<i32>,
     joins: Vec<(JoinType, String, String, String)>,
+    groups: Vec<String>,
 }
 
 impl QueryBuilder {
@@ -24,6 +25,7 @@ impl QueryBuilder {
             wheres: Vec::new(),
             limit: None,
             joins: vec![],
+            groups: vec![],
         }
     }
 
@@ -110,6 +112,13 @@ impl QueryBuilder {
         self
     }
 
+    pub fn group_by<S: Into<String>>(mut self, fields: Vec<S>) -> QueryBuilder {
+        self.groups
+            .append(&mut fields.into_iter().map(|v| v.into()).collect::<Vec<_>>());
+
+        self
+    }
+
     pub fn build(self) -> String {
         let table = self.from.unwrap();
         let from = format!("FROM {}", table.clone());
@@ -151,6 +160,11 @@ impl QueryBuilder {
                 .join(" "),
             if !self.wheres.is_empty() {
                 where_clause
+            } else {
+                String::new()
+            },
+            if !self.groups.is_empty() {
+                format!("GROUP BY {}", self.groups.as_slice().join(", "))
             } else {
                 String::new()
             },
@@ -235,5 +249,12 @@ fn query_with_build() {
             .left_join("bar2", ("baz2", "quux2"))
             .build(),
         "SELECT * FROM foo INNER JOIN bar ON foo.baz = bar.quux LEFT JOIN bar2 ON foo.baz2 = bar2.quux2"
+    );
+    assert_eq!(
+        QueryBuilder::new()
+            .table("foo")
+            .group_by(vec!["a", "b", "c"])
+            .build(),
+        "SELECT * FROM foo GROUP BY a, b, c"
     );
 }
