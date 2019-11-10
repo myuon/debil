@@ -18,12 +18,9 @@ fn it_derives_sql_table() {
         pk: 1,
     };
 
+    assert_eq!(table_name::<Ex1>(), "ex_1");
     assert_eq!(
-        SQLTable::table_name(std::marker::PhantomData::<Ex1>),
-        "ex_1"
-    );
-    assert_eq!(
-        SQLTable::schema_of(std::marker::PhantomData::<Ex1>),
+        schema_of::<Ex1>(),
         vec![
             (
                 "field1".to_string(),
@@ -60,7 +57,7 @@ fn it_derives_sql_table() {
         "INSERT INTO ex_1 (field1, aaaa, pk) VALUES (:field1, :aaaa, :pk)"
     );
 
-    let ex2: Ex1 = SQLTable::map_from_sql(
+    let ex2 = map_from_sql::<Ex1>(
         vec![
             (
                 "field1".to_string(),

@@ -220,9 +220,17 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let sql_type = table_attr.sql_type;
 
     let expanded = quote! {
-        impl SQLTable for #ident {
+        impl SQLMapper for #ident {
             type ValueType = #sql_type;
 
+            fn map_from_sql(values: std::collections::HashMap<String, Self::ValueType>) -> Self {
+                #ident {
+                    #( #record_fields )*
+                }
+            }
+        }
+
+        impl SQLTable for #ident {
             fn table_name(_: std::marker::PhantomData<Self>) -> String {
                 #table_name.to_string()
             }
@@ -239,12 +247,6 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 #( #push_field_names )*
 
                 result
-            }
-
-            fn map_from_sql(values: std::collections::HashMap<String, Self::ValueType>) -> Self {
-                #ident {
-                    #( #record_fields )*
-                }
             }
         }
     };

@@ -50,13 +50,16 @@ pub fn create_column_query(
     .join(" ")
 }
 
-pub trait SQLTable: Sized {
+pub trait SQLMapper: Sized {
     type ValueType;
+    fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self;
+}
+
+pub trait SQLTable: SQLMapper {
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)>;
 
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
-    fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self;
 
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
         let schema = SQLTable::schema_of(ty);
@@ -94,6 +97,22 @@ pub trait SQLTable: Sized {
             pairs,
         )
     }
+}
+
+pub fn table_name<T: SQLTable>() -> String {
+    SQLTable::table_name(std::marker::PhantomData::<T>)
+}
+
+pub fn schema_of<T: SQLTable>() -> Vec<(String, String, FieldAttribute)> {
+    SQLTable::schema_of(std::marker::PhantomData::<T>)
+}
+
+pub fn map_from_sql<T: SQLMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {
+    SQLMapper::map_from_sql(h)
+}
+
+pub fn create_table_query<T: SQLTable>() -> String {
+    SQLTable::create_table_query(std::marker::PhantomData::<T>)
 }
 
 pub trait SQLValue<Type> {
