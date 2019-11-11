@@ -117,8 +117,8 @@ pub fn create_table_query<T: SQLTable>() -> String {
 
 pub trait SQLValue<Type> {
     // Varchar type requires the size in the type representation, so we need size argument here
-    fn column_type(_: std::marker::PhantomData<Self>, size: i32) -> String;
+    fn column_type(_: std::marker::PhantomData<Type>, size: i32) -> String;
 
-    fn serialize(self) -> Type;
-    fn deserialize(_: Type) -> Self;
+    fn serialize(_: Type) -> Self;
+    fn deserialize(self) -> Type;
 }
