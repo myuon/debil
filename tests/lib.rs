@@ -81,4 +81,34 @@ fn it_derives_sql_table() {
         SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
         "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int)"
     );
+
+    assert_eq!(
+        SQLTable::add_primary_key_query(std::marker::PhantomData::<Ex1>),
+        "ALTER TABLE ex_1 ADD PRIMARY KEY(pk)"
+    )
+}
+
+#[test]
+fn composite_primary_key() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key_columns = "pk,pk2")]
+    struct Ex2 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+
+    let ex2 = Ex2 {
+        field1: "aaa".to_string(),
+        aaaa: 10,
+        pk: 1,
+        pk2: 1,
+    };
+
+    assert_eq!(
+        SQLTable::add_primary_key_query(std::marker::PhantomData::<Ex2>),
+        "ALTER TABLE ex_1 ADD PRIMARY KEY(pk,pk2)"
+    )
 }
