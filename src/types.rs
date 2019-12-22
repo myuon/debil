@@ -3,7 +3,6 @@ pub struct FieldAttribute {
     pub size: Option<i32>,
     pub unique: Option<bool>,
     pub not_null: Option<bool>,
-    pub primary_key: Option<bool>,
 }
 
 impl Default for FieldAttribute {
@@ -12,7 +11,6 @@ impl Default for FieldAttribute {
             size: None,
             unique: None,
             not_null: None,
-            primary_key: None,
         }
     }
 }
@@ -25,11 +23,6 @@ pub fn create_column_query(
     [
         &[column_name.as_str(), column_type.as_str()],
         vec![
-            if attr.primary_key.unwrap_or(false) {
-                Some("PRIMARY KEY")
-            } else {
-                None
-            },
             if attr.unique.unwrap_or(false) {
                 Some("UNIQUE")
             } else {

@@ -6,7 +6,6 @@ struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
     aaaa: i32,
-    #[sql(primary_key = true)]
     pk: i32,
 }
 
@@ -38,7 +37,6 @@ fn it_derives_sql_table() {
                 "pk".to_string(),
                 "int".to_string(),
                 FieldAttribute {
-                    primary_key: Some(true),
                     ..Default::default()
                 }
             ),
@@ -81,6 +79,6 @@ fn it_derives_sql_table() {
 
     assert_eq!(
         SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
-        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int PRIMARY KEY)"
+        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int)"
     );
 }
