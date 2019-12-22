@@ -59,6 +59,17 @@ pub trait SQLTable: SQLMapper {
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)>;
 
+    fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String>;
+
+    fn add_primary_key_query(ty: std::marker::PhantomData<Self>) -> String {
+        let columns = SQLTable::primary_key_columns(ty);
+        format!(
+            "ALTER TABLE {} ADD PRIMARY KEY({})",
+            SQLTable::table_name(ty),
+            columns.join(",")
+        )
+    }
+
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
 
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
@@ -105,6 +116,10 @@ pub fn table_name<T: SQLTable>() -> String {
 
 pub fn schema_of<T: SQLTable>() -> Vec<(String, String, FieldAttribute)> {
     SQLTable::schema_of(std::marker::PhantomData::<T>)
+}
+
+pub fn primary_key_columns<T: SQLTable>() -> Vec<String> {
+    SQLTable::primary_key_columns(std::marker::PhantomData::<T>)
 }
 
 pub fn map_from_sql<T: SQLMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {

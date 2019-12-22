@@ -1,7 +1,7 @@
 use debil::*;
 
 #[derive(Table, PartialEq, Debug, Clone)]
-#[sql(table_name = "ex_1", sql_type = "Vec<u8>")]
+#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key_columns = "pk")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
@@ -19,6 +19,7 @@ fn it_derives_sql_table() {
     };
 
     assert_eq!(table_name::<Ex1>(), "ex_1");
+    assert_eq!(primary_key_columns::<Ex1>(), vec!["pk"]);
     assert_eq!(
         schema_of::<Ex1>(),
         vec![

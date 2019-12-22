@@ -7,6 +7,7 @@ use syn::{parse_macro_input, DeriveInput, Result};
 
 struct TableAttr {
     table_name: String,
+    primary_key_columns: Vec<String>,
     sql_type: proc_macro2::TokenStream,
 }
 
@@ -29,6 +30,7 @@ impl AttrInput {
     fn to_table_attr(self, table_name: String) -> TableAttr {
         let mut table = TableAttr {
             table_name: table_name,
+            primary_key_columns: vec![],
             sql_type: quote! { Vec<u8> },
         };
 
@@ -40,6 +42,9 @@ impl AttrInput {
                         syn::parse_str::<syn::Type>(&attr.value.as_str().unwrap()).unwrap();
                     table.sql_type = quote! { #sql_type };
                 }
+                "primary_key_columns" => {
+                    table.primary_key_columns = attr.value.as_str().unwrap().split(",").map(|s| s.to_string()).collect();
+                },
                 d => panic!("unsupported attribute: {}", d),
             }
         }
@@ -182,8 +187,16 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .unwrap()
         .to_table_attr(format!("{}", ident));
     let table_name = table_attr.table_name;
+    let primary_key_columns = table_attr.primary_key_columns;
 
     let field_struct = get_fields_from_datastruct(input.data);
+    
+    let push_primary_key_columns = primary_key_columns.iter()
+    .map(|v| 
+        quote! { result.push(#v.to_string()); }    
+    )
+    .collect::<Vec<_>>();
+    
     let push_field_names = field_struct
         .iter()
         .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::serialize(self.#ident))); })
@@ -238,7 +251,12 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)> {
                 let mut result = Vec::new();
                 #( #push_column_schema )*
+                result
+            }
 
+            fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String> {
+                let mut result = Vec::new();
+                #( #push_primary_key_columns )*
                 result
             }
 
