@@ -179,7 +179,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let ident = input.ident;
     if input.attrs.is_empty() {
-        panic!("Currently, sql(table_name) and sql(sql_type) are required.");
+        panic!("Currently, sql(table_name),sql(sql_type) and primary_key_columns(comma_separated_string) are required.");
     }
 
     let attr_stream = input.attrs[0].tokens.clone();
@@ -187,10 +187,21 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .unwrap()
         .to_table_attr(format!("{}", ident));
     let table_name = table_attr.table_name;
-    let primary_key_columns = table_attr.primary_key_columns;
 
     let field_struct = get_fields_from_datastruct(input.data);
+
+    let primary_key_columns = table_attr.primary_key_columns;
+    if primary_key_columns.len() == 0 {
+        panic!("At least one primary key must be specified")
+    }
     
+    // checking existince of keys specified as primary key
+    for pk_column_name in primary_key_columns.iter() {
+            field_struct.iter().find(|(ident,_,_)|
+                ident == pk_column_name
+            ).expect(&format!("primary_key: {} was not found in this table struct",pk_column_name));
+    };
+
     let push_primary_key_columns = primary_key_columns.iter()
     .map(|v| 
         quote! { result.push(#v.to_string()); }    

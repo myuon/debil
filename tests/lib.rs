@@ -1,7 +1,7 @@
 use debil::*;
 
 #[derive(Table, PartialEq, Debug, Clone)]
-#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key_columns = "pk")]
+#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key_columns = "")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
