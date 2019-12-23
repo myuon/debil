@@ -114,5 +114,20 @@ fn composite_primary_key() {
     assert_eq!(
         SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
         "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
-    )
+    );
+
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(
+        table_name = "ex_1",
+        sql_type = "Vec<u8>",
+        primary_key_columns = "pk ,pk2"
+    )]
+    struct Ex3 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+    assert_eq!(primary_key_columns::<Ex3>(), vec!["pk", "pk2"]);
 }

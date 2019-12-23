@@ -43,7 +43,7 @@ impl AttrInput {
                     table.sql_type = quote! { #sql_type };
                 }
                 "primary_key_columns" => {
-                    table.primary_key_columns = attr.value.as_str().unwrap().split(",").map(|s| s.to_string()).collect();
+                    table.primary_key_columns = attr.value.as_str().unwrap().split(",").map(|s| s.trim().to_string()).collect();
                 },
                 d => panic!("unsupported attribute: {}", d),
             }
