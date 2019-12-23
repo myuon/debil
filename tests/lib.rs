@@ -79,12 +79,12 @@ fn it_derives_sql_table() {
 
     assert_eq!(
         SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
-        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int)"
+        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int, CONSTRAINT primary_key PRIMARY KEY(pk))"
     );
 
     assert_eq!(
-        SQLTable::add_primary_key_query(std::marker::PhantomData::<Ex1>),
-        "ALTER TABLE ex_1 ADD PRIMARY KEY(pk)"
+        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex1>),
+        "CONSTRAINT primary_key PRIMARY KEY(pk)"
     )
 }
 
@@ -112,7 +112,7 @@ fn composite_primary_key() {
     };
 
     assert_eq!(
-        SQLTable::add_primary_key_query(std::marker::PhantomData::<Ex2>),
-        "ALTER TABLE ex_1 ADD PRIMARY KEY(pk,pk2)"
+        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
+        "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
     )
 }

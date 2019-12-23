@@ -54,13 +54,9 @@ pub trait SQLTable: SQLMapper {
 
     fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String>;
 
-    fn add_primary_key_query(ty: std::marker::PhantomData<Self>) -> String {
+    fn constraint_primary_key_query(ty: std::marker::PhantomData<Self>) -> String {
         let columns = SQLTable::primary_key_columns(ty);
-        format!(
-            "ALTER TABLE {} ADD PRIMARY KEY({})",
-            SQLTable::table_name(ty),
-            columns.join(",")
-        )
+        format!("CONSTRAINT primary_key PRIMARY KEY({})", columns.join(","))
     }
 
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
@@ -69,14 +65,15 @@ pub trait SQLTable: SQLMapper {
         let schema = SQLTable::schema_of(ty);
 
         format!(
-            "CREATE TABLE IF NOT EXISTS {} ({})",
+            "CREATE TABLE IF NOT EXISTS {} ({}, {})",
             SQLTable::table_name(ty),
             schema
                 .into_iter()
                 .map(|(name, typ, attr)| create_column_query(name, typ, attr))
                 .collect::<Vec<_>>()
                 .as_slice()
-                .join(", ")
+                .join(", "),
+            SQLTable::constraint_primary_key_query(ty),
         )
     }
 
