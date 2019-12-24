@@ -77,7 +77,7 @@ pub trait SQLTable: SQLMapper {
                 .collect::<Vec<String>>()
                 .contains(key)
             {
-                panic!("index: columns {} is not field of {}", key, table_name)
+                panic!("index: column {} is not field of {}", key, table_name)
             }
         }
 
