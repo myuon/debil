@@ -61,6 +61,37 @@ pub trait SQLTable: SQLMapper {
 
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
 
+    fn create_index_query(
+        ty: std::marker::PhantomData<Self>,
+        index_name: String,
+        index_keys: Vec<String>,
+        unique: bool,
+    ) -> String {
+        let schema = SQLTable::schema_of(ty);
+        let table_name = SQLTable::table_name(ty);
+        // search if specified keys exist
+        for key in index_keys.iter() {
+            if !schema
+                .iter()
+                .map(|(column_name, _, _)| column_name.to_string())
+                .collect::<Vec<String>>()
+                .contains(key)
+            {
+                panic!("index: columns {} is not field of {}", key, table_name)
+            }
+        }
+
+        let unique_statement = if unique { "UNIQUE" } else { "" };
+
+        format!(
+            "CREATE {} INDEX {} ON {}({});",
+            unique_statement,
+            index_name,
+            table_name,
+            index_keys.join(","),
+        )
+    }
+
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
         let schema = SQLTable::schema_of(ty);
 
@@ -110,6 +141,19 @@ pub fn schema_of<T: SQLTable>() -> Vec<(String, String, FieldAttribute)> {
 
 pub fn primary_key_columns<T: SQLTable>() -> Vec<String> {
     SQLTable::primary_key_columns(std::marker::PhantomData::<T>)
+}
+
+pub fn create_index_query<T: SQLTable>(
+    index_name: String,
+    index_keys: Vec<String>,
+    unique: bool,
+) -> String {
+    SQLTable::create_index_query(
+        std::marker::PhantomData::<T>,
+        index_name,
+        index_keys,
+        unique,
+    )
 }
 
 pub fn map_from_sql<T: SQLMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {

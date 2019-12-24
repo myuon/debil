@@ -123,3 +123,21 @@ fn composite_primary_key() {
     }
     assert_eq!(primary_key_columns::<Ex3>(), vec!["pk", "pk2"]);
 }
+
+#[test]
+fn add_index() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk ,pk2")]
+    struct Ex4 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+
+    assert_eq!(
+        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], true),
+        "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
+    )
+}
