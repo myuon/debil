@@ -1,7 +1,7 @@
 use debil::*;
 
 #[derive(Table, PartialEq, Debug, Clone)]
-#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key_columns = "pk")]
+#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
@@ -91,11 +91,7 @@ fn it_derives_sql_table() {
 #[test]
 fn composite_primary_key() {
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(
-        table_name = "ex_1",
-        sql_type = "Vec<u8>",
-        primary_key_columns = "pk,pk2"
-    )]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
     struct Ex2 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
@@ -117,11 +113,7 @@ fn composite_primary_key() {
     );
 
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(
-        table_name = "ex_1",
-        sql_type = "Vec<u8>",
-        primary_key_columns = "pk ,pk2"
-    )]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk ,pk2")]
     struct Ex3 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,

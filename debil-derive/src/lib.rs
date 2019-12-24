@@ -7,7 +7,7 @@ use syn::{parse_macro_input, DeriveInput, Result};
 
 struct TableAttr {
     table_name: String,
-    primary_key_columns: Vec<String>,
+    primary_key: Vec<String>,
     sql_type: proc_macro2::TokenStream,
 }
 
@@ -30,7 +30,7 @@ impl AttrInput {
     fn to_table_attr(self, table_name: String) -> TableAttr {
         let mut table = TableAttr {
             table_name: table_name,
-            primary_key_columns: vec![],
+            primary_key: vec![],
             sql_type: quote! { Vec<u8> },
         };
 
@@ -42,8 +42,8 @@ impl AttrInput {
                         syn::parse_str::<syn::Type>(&attr.value.as_str().unwrap()).unwrap();
                     table.sql_type = quote! { #sql_type };
                 }
-                "primary_key_columns" => {
-                    table.primary_key_columns = attr
+                "primary_key" => {
+                    table.primary_key = attr
                         .value
                         .as_str()
                         .unwrap()
@@ -196,7 +196,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let field_struct = get_fields_from_datastruct(input.data);
 
-    let primary_key_columns = table_attr.primary_key_columns;
+    let primary_key_columns = table_attr.primary_key;
     if primary_key_columns.len() == 0 {
         panic!("At least one primary key must be specified")
     }
