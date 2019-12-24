@@ -7,6 +7,7 @@ use syn::{parse_macro_input, DeriveInput, Result};
 
 struct TableAttr {
     table_name: String,
+    primary_key: Vec<String>,
     sql_type: proc_macro2::TokenStream,
 }
 
@@ -29,6 +30,7 @@ impl AttrInput {
     fn to_table_attr(self, table_name: String) -> TableAttr {
         let mut table = TableAttr {
             table_name: table_name,
+            primary_key: vec![],
             sql_type: quote! { Vec<u8> },
         };
 
@@ -39,6 +41,15 @@ impl AttrInput {
                     let sql_type =
                         syn::parse_str::<syn::Type>(&attr.value.as_str().unwrap()).unwrap();
                     table.sql_type = quote! { #sql_type };
+                }
+                "primary_key" => {
+                    table.primary_key = attr
+                        .value
+                        .as_str()
+                        .unwrap()
+                        .split(",")
+                        .map(|s| s.trim().to_string())
+                        .collect();
                 }
                 d => panic!("unsupported attribute: {}", d),
             }
@@ -174,7 +185,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     let ident = input.ident;
     if input.attrs.is_empty() {
-        panic!("Currently, sql(table_name) and sql(sql_type) are required.");
+        panic!("Currently, sql(table_name),sql(sql_type) and primary_key_columns(comma_separated_string) are required.");
     }
 
     let attr_stream = input.attrs[0].tokens.clone();
@@ -184,6 +195,30 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let table_name = table_attr.table_name;
 
     let field_struct = get_fields_from_datastruct(input.data);
+
+    let primary_key_columns = table_attr.primary_key;
+    if primary_key_columns.len() == 0 {
+        panic!("At least one primary key must be specified")
+    }
+    // checking existince of keys specified as primary key
+    for pk_column_name in primary_key_columns.iter() {
+        if !field_struct
+            .iter()
+            .map(|(ident, _, _)| ident.to_string())
+            .collect::<Vec<String>>()
+            .contains(pk_column_name)
+        {
+            panic!(
+                "primary_key: {} was not found in this table struct",
+                pk_column_name
+            )
+        };
+    }
+
+    let push_primary_key_columns = primary_key_columns
+        .iter()
+        .map(|v| quote! { result.push(#v.to_string()); })
+        .collect::<Vec<_>>();
     let push_field_names = field_struct
         .iter()
         .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::serialize(self.#ident))); })
@@ -195,7 +230,6 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             let size = option_to_quote(size_opt);
             let unique = option_to_quote(attr_map.get("unique").map(|v| v.clone().as_bool().unwrap()));
             let not_null = option_to_quote(attr_map.get("not_null").map(|v| v.clone().as_bool().unwrap()));
-            let primary_key = option_to_quote(attr_map.get("primary_key").map(|v| v.clone().as_bool().unwrap()));
             let size_unopt = size_opt.unwrap_or(0);
 
             quote! {
@@ -203,7 +237,6 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                     size: #size,
                     unique: #unique,
                     not_null: #not_null,
-                    primary_key: #primary_key,
                 }));
             }
         })
@@ -238,7 +271,12 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)> {
                 let mut result = Vec::new();
                 #( #push_column_schema )*
+                result
+            }
 
+            fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String> {
+                let mut result = Vec::new();
+                #( #push_primary_key_columns )*
                 result
             }
 

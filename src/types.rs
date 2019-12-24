@@ -3,7 +3,6 @@ pub struct FieldAttribute {
     pub size: Option<i32>,
     pub unique: Option<bool>,
     pub not_null: Option<bool>,
-    pub primary_key: Option<bool>,
 }
 
 impl Default for FieldAttribute {
@@ -12,7 +11,6 @@ impl Default for FieldAttribute {
             size: None,
             unique: None,
             not_null: None,
-            primary_key: None,
         }
     }
 }
@@ -25,11 +23,6 @@ pub fn create_column_query(
     [
         &[column_name.as_str(), column_type.as_str()],
         vec![
-            if attr.primary_key.unwrap_or(false) {
-                Some("PRIMARY KEY")
-            } else {
-                None
-            },
             if attr.unique.unwrap_or(false) {
                 Some("UNIQUE")
             } else {
@@ -59,20 +52,28 @@ pub trait SQLTable: SQLMapper {
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)>;
 
+    fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String>;
+
+    fn constraint_primary_key_query(ty: std::marker::PhantomData<Self>) -> String {
+        let columns = SQLTable::primary_key_columns(ty);
+        format!("CONSTRAINT primary_key PRIMARY KEY({})", columns.join(","))
+    }
+
     fn map_to_sql(self) -> Vec<(String, Self::ValueType)>;
 
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
         let schema = SQLTable::schema_of(ty);
 
         format!(
-            "CREATE TABLE IF NOT EXISTS {} ({})",
+            "CREATE TABLE IF NOT EXISTS {} ({}, {})",
             SQLTable::table_name(ty),
             schema
                 .into_iter()
                 .map(|(name, typ, attr)| create_column_query(name, typ, attr))
                 .collect::<Vec<_>>()
                 .as_slice()
-                .join(", ")
+                .join(", "),
+            SQLTable::constraint_primary_key_query(ty),
         )
     }
 
@@ -105,6 +106,10 @@ pub fn table_name<T: SQLTable>() -> String {
 
 pub fn schema_of<T: SQLTable>() -> Vec<(String, String, FieldAttribute)> {
     SQLTable::schema_of(std::marker::PhantomData::<T>)
+}
+
+pub fn primary_key_columns<T: SQLTable>() -> Vec<String> {
+    SQLTable::primary_key_columns(std::marker::PhantomData::<T>)
 }
 
 pub fn map_from_sql<T: SQLMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {

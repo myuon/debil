@@ -1,12 +1,11 @@
 use debil::*;
 
 #[derive(Table, PartialEq, Debug, Clone)]
-#[sql(table_name = "ex_1", sql_type = "Vec<u8>")]
+#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
     aaaa: i32,
-    #[sql(primary_key = true)]
     pk: i32,
 }
 
@@ -19,6 +18,7 @@ fn it_derives_sql_table() {
     };
 
     assert_eq!(table_name::<Ex1>(), "ex_1");
+    assert_eq!(primary_key_columns::<Ex1>(), vec!["pk"]);
     assert_eq!(
         schema_of::<Ex1>(),
         vec![
@@ -37,7 +37,6 @@ fn it_derives_sql_table() {
                 "pk".to_string(),
                 "int".to_string(),
                 FieldAttribute {
-                    primary_key: Some(true),
                     ..Default::default()
                 }
             ),
@@ -80,6 +79,47 @@ fn it_derives_sql_table() {
 
     assert_eq!(
         SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
-        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int PRIMARY KEY)"
+        "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int, CONSTRAINT primary_key PRIMARY KEY(pk))"
     );
+
+    assert_eq!(
+        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex1>),
+        "CONSTRAINT primary_key PRIMARY KEY(pk)"
+    )
+}
+
+#[test]
+fn composite_primary_key() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    struct Ex2 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+
+    let ex2 = Ex2 {
+        field1: "aaa".to_string(),
+        aaaa: 10,
+        pk: 1,
+        pk2: 1,
+    };
+
+    assert_eq!(
+        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
+        "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
+    );
+
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk ,pk2")]
+    struct Ex3 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+    assert_eq!(primary_key_columns::<Ex3>(), vec!["pk", "pk2"]);
 }
