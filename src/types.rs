@@ -81,15 +81,21 @@ pub trait SQLTable: SQLMapper {
             }
         }
 
-        let unique_statement = if unique { "UNIQUE" } else { "" };
-
-        format!(
-            "CREATE {} INDEX {} ON {}({});",
-            unique_statement,
-            index_name,
-            table_name,
-            index_keys.join(","),
-        )
+        if unique {
+            format!(
+                "CREATE UNIQUE INDEX {} ON {}({});",
+                index_name,
+                table_name,
+                index_keys.join(","),
+            )
+        } else {
+            format!(
+                "CREATE INDEX {} ON {}({});",
+                index_name,
+                table_name,
+                index_keys.join(","),
+            )
+        }
     }
 
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {

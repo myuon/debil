@@ -139,7 +139,12 @@ fn add_index() {
     assert_eq!(
         create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], true),
         "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
-    )
+    );
+
+    assert_eq!(
+        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], false),
+        "CREATE INDEX hoge ON ex_1(aaaa);"
+    );
 }
 
 #[test]
