@@ -127,7 +127,7 @@ fn composite_primary_key() {
 #[test]
 fn add_index() {
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk ,pk2")]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
     struct Ex4 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
@@ -140,4 +140,19 @@ fn add_index() {
         create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], true),
         "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
     )
+}
+
+#[test]
+#[should_panic]
+fn add_index_key_not_found() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    struct Ex5 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+    create_index_query::<Ex5>("hoge".to_string(), vec!["field5".to_string()], true);
 }
