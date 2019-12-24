@@ -43,8 +43,14 @@ impl AttrInput {
                     table.sql_type = quote! { #sql_type };
                 }
                 "primary_key_columns" => {
-                    table.primary_key_columns = attr.value.as_str().unwrap().split(",").map(|s| s.trim().to_string()).collect();
-                },
+                    table.primary_key_columns = attr
+                        .value
+                        .as_str()
+                        .unwrap()
+                        .split(",")
+                        .map(|s| s.trim().to_string())
+                        .collect();
+                }
                 d => panic!("unsupported attribute: {}", d),
             }
         }
@@ -194,20 +200,25 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     if primary_key_columns.len() == 0 {
         panic!("At least one primary key must be specified")
     }
-    
     // checking existince of keys specified as primary key
     for pk_column_name in primary_key_columns.iter() {
-            field_struct.iter().find(|(ident,_,_)|
-                ident == pk_column_name
-            ).expect(&format!("primary_key: {} was not found in this table struct",pk_column_name));
-    };
+        if !field_struct
+            .iter()
+            .map(|(ident, _, _)| ident.to_string())
+            .collect::<Vec<String>>()
+            .contains(pk_column_name)
+        {
+            panic!(
+                "primary_key: {} was not found in this table struct",
+                pk_column_name
+            )
+        };
+    }
 
-    let push_primary_key_columns = primary_key_columns.iter()
-    .map(|v| 
-        quote! { result.push(#v.to_string()); }    
-    )
-    .collect::<Vec<_>>();
-    
+    let push_primary_key_columns = primary_key_columns
+        .iter()
+        .map(|v| quote! { result.push(#v.to_string()); })
+        .collect::<Vec<_>>();
     let push_field_names = field_struct
         .iter()
         .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::serialize(self.#ident))); })
