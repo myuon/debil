@@ -130,12 +130,12 @@ fn add_index() {
     }
 
     assert_eq!(
-        create_unique_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()]),
+        create_unique_index_query::<Ex4>("hoge", vec!["aaaa"]),
         "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
     );
 
     assert_eq!(
-        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()]),
+        create_index_query::<Ex4>("hoge", vec!["aaaa"]),
         "CREATE INDEX hoge ON ex_1(aaaa);"
     );
 }
@@ -152,5 +152,5 @@ fn add_index_key_not_found() {
         pk: i32,
         pk2: i32,
     }
-    create_index_query::<Ex5>("hoge".to_string(), vec!["field5".to_string()]);
+    create_index_query::<Ex5>("hoge", vec!["field5"]);
 }

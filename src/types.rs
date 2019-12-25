@@ -63,8 +63,8 @@ pub trait SQLTable: SQLMapper {
 
     fn create_index_query(
         ty: std::marker::PhantomData<Self>,
-        index_name: String,
-        index_keys: Vec<String>,
+        index_name: &'static str,
+        index_keys: Vec<&'static str>,
     ) -> String {
         let schema = SQLTable::schema_of(ty);
         let table_name = SQLTable::table_name(ty);
@@ -72,8 +72,8 @@ pub trait SQLTable: SQLMapper {
         for key in index_keys.iter() {
             if !schema
                 .iter()
-                .map(|(column_name, _, _)| column_name.to_string())
-                .collect::<Vec<String>>()
+                .map(|(column_name, _, _)| column_name.as_str())
+                .collect::<Vec<&str>>()
                 .contains(key)
             {
                 panic!("index: column {} is not field of {}", key, table_name)
@@ -89,8 +89,8 @@ pub trait SQLTable: SQLMapper {
 
     fn create_unique_index_query(
         ty: std::marker::PhantomData<Self>,
-        index_name: String,
-        index_keys: Vec<String>,
+        index_name: &'static str,
+        index_keys: Vec<&'static str>,
     ) -> String {
         let schema = SQLTable::schema_of(ty);
         let table_name = SQLTable::table_name(ty);
@@ -98,8 +98,8 @@ pub trait SQLTable: SQLMapper {
         for key in index_keys.iter() {
             if !schema
                 .iter()
-                .map(|(column_name, _, _)| column_name.to_string())
-                .collect::<Vec<String>>()
+                .map(|(column_name, _, _)| column_name.as_str())
+                .collect::<Vec<&str>>()
                 .contains(key)
             {
                 panic!("index: column {} is not field of {}", key, table_name)
@@ -165,13 +165,16 @@ pub fn primary_key_columns<T: SQLTable>() -> Vec<String> {
     SQLTable::primary_key_columns(std::marker::PhantomData::<T>)
 }
 
-pub fn create_index_query<T: SQLTable>(index_name: String, index_keys: Vec<String>) -> String {
+pub fn create_index_query<T: SQLTable>(
+    index_name: &'static str,
+    index_keys: Vec<&'static str>,
+) -> String {
     SQLTable::create_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
 }
 
 pub fn create_unique_index_query<T: SQLTable>(
-    index_name: String,
-    index_keys: Vec<String>,
+    index_name: &'static str,
+    index_keys: Vec<&'static str>,
 ) -> String {
     SQLTable::create_unique_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
 }
