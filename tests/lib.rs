@@ -100,13 +100,6 @@ fn composite_primary_key() {
         pk2: i32,
     }
 
-    let ex2 = Ex2 {
-        field1: "aaa".to_string(),
-        aaaa: 10,
-        pk: 1,
-        pk2: 1,
-    };
-
     assert_eq!(
         SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
         "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
@@ -137,12 +130,12 @@ fn add_index() {
     }
 
     assert_eq!(
-        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], true),
+        create_unique_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()]),
         "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
     );
 
     assert_eq!(
-        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()], false),
+        create_index_query::<Ex4>("hoge".to_string(), vec!["aaaa".to_string()]),
         "CREATE INDEX hoge ON ex_1(aaaa);"
     );
 }
@@ -159,5 +152,5 @@ fn add_index_key_not_found() {
         pk: i32,
         pk2: i32,
     }
-    create_index_query::<Ex5>("hoge".to_string(), vec!["field5".to_string()], true);
+    create_index_query::<Ex5>("hoge".to_string(), vec!["field5".to_string()]);
 }
