@@ -100,13 +100,6 @@ fn composite_primary_key() {
         pk2: i32,
     }
 
-    let ex2 = Ex2 {
-        field1: "aaa".to_string(),
-        aaaa: 10,
-        pk: 1,
-        pk2: 1,
-    };
-
     assert_eq!(
         SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
         "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
@@ -122,4 +115,42 @@ fn composite_primary_key() {
         pk2: i32,
     }
     assert_eq!(primary_key_columns::<Ex3>(), vec!["pk", "pk2"]);
+}
+
+#[test]
+fn add_index() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    struct Ex4 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+
+    assert_eq!(
+        create_unique_index_query::<Ex4>("hoge", vec!["aaaa"]),
+        "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
+    );
+
+    assert_eq!(
+        create_index_query::<Ex4>("hoge", vec!["aaaa"]),
+        "CREATE INDEX hoge ON ex_1(aaaa);"
+    );
+}
+
+#[test]
+#[should_panic]
+fn add_index_key_not_found() {
+    #[derive(Table, PartialEq, Debug, Clone)]
+    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    struct Ex5 {
+        #[sql(size = 50, unique = true, not_null = true)]
+        field1: String,
+        aaaa: i32,
+        pk: i32,
+        pk2: i32,
+    }
+    create_index_query::<Ex5>("hoge", vec!["field5"]);
 }
