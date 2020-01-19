@@ -8,11 +8,8 @@ pub trait HasNotFound {
     fn not_found() -> Self;
 }
 
-// async_trait does not support pub trait?
-pub trait QueryExecutor: QueryExecutorImpl {}
-
 #[async_trait]
-pub trait QueryExecutorImpl {
+pub trait SQLConn {
     type Error: HasNotFound;
 
     async fn sql_exec<V: Sync + Send>(
