@@ -26,11 +26,8 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         params: Params<V>,
     ) -> Result<Vec<T>, Self::Error>;
 
-    async fn sql_batch_exec(
-        &mut self,
-        query: String,
-        params: HashMap<String, String>,
-    ) -> Result<(), Self::Error>;
+    async fn sql_batch_exec(&mut self, query: String, params: Params<V>)
+        -> Result<(), Self::Error>;
 
     async fn create_table<T: SQLTable<ValueType = V> + Sync + Send>(
         &mut self,
