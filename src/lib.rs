@@ -3,8 +3,8 @@ pub use debil_derive::*;
 mod types;
 pub use types::*;
 
-mod executor;
-pub use executor::*;
+mod conn;
+pub use conn::*;
 
 mod query;
 pub use query::*;
