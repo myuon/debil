@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 pub struct Params<ValueType>(pub Vec<(String, ValueType)>);
 
-impl Params {
+impl<V> Params<V> {
     pub fn new() -> Params<V> {
         Params(Vec::new())
     }
