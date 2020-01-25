@@ -3,6 +3,11 @@ name = "debil-derive"
 version = "0.1.0"
 authors = ["myuon <ioi.joi.koi.loi@gmail.com>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/myuon/debil"
+readme = "README.md"
+keywords = ["database"]
+categories = ["database"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
