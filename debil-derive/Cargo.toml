@@ -5,6 +5,7 @@ authors = ["myuon <ioi.joi.koi.loi@gmail.com>"]
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/myuon/debil"
+description = "Provides derive macros for debil"
 readme = "README.md"
 keywords = ["database"]
 categories = ["database"]
