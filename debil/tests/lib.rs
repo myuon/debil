@@ -52,8 +52,12 @@ fn it_derives_sql_table() {
         ]
     );
     assert_eq!(
-        ex1.clone().save_query_with_params().0,
+        ex1.clone().insert_query_with_params().0,
         "INSERT INTO ex_1 (field1, aaaa, pk) VALUES (:field1, :aaaa, :pk)"
+    );
+    assert_eq!(
+        ex1.clone().update_query_with_params().0,
+        "UPDATE ex_1 SET field1 = :field1, aaaa = :aaaa, pk = :pk WHERE pk = :pk"
     );
 
     let ex2 = map_from_sql::<Ex1>(

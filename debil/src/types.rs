@@ -130,7 +130,7 @@ pub trait SQLTable: SQLMapper {
         )
     }
 
-    fn save_query_with_params(self) -> (String, Vec<(String, Self::ValueType)>) {
+    fn insert_query_with_params(self) -> (String, Vec<(String, Self::ValueType)>) {
         let pairs = self.map_to_sql();
         let keys = pairs.iter().map(|(k, _)| k).collect::<Vec<_>>();
 
@@ -147,6 +147,29 @@ pub trait SQLTable: SQLMapper {
                     .collect::<Vec<_>>()
                     .as_slice()
                     .join(", "),
+            ),
+            pairs,
+        )
+    }
+
+    fn update_query_with_params(self) -> (String, Vec<(String, Self::ValueType)>) {
+        let pairs = self.map_to_sql();
+        let keys = pairs.iter().map(|(k, _)| k).collect::<Vec<_>>();
+        let primary_keys_cond = Self::primary_key_columns(std::marker::PhantomData::<Self>)
+            .into_iter()
+            .map(|v| format!("{} = :{}", v, v))
+            .collect::<Vec<_>>()
+            .join(" and ");
+
+        (
+            format!(
+                "UPDATE {} SET {} WHERE {}",
+                Self::table_name(std::marker::PhantomData::<Self>),
+                keys.iter()
+                    .map(|k| format!("{} = :{}", k, k))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                primary_keys_cond
             ),
             pairs,
         )

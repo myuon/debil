@@ -44,15 +44,27 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         Ok(())
     }
 
-    // FIXME: update
-    async fn save<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn create<T: SQLTable<ValueType = V> + Sync + Send>(
         &mut self,
         data: T,
-    ) -> Result<(), Self::Error> {
-        let (query, ps) = data.save_query_with_params();
-        self.sql_exec(query, Params::<V>(ps)).await?;
+    ) -> Result<u64, Self::Error> {
+        let (query, ps) = data.insert_query_with_params();
 
-        Ok(())
+        self.sql_exec(query, Params::<V>(ps)).await
+    }
+
+    async fn save<T: SQLTable<ValueType = V> + Sync + Send + Clone>(
+        &mut self,
+        data: T,
+    ) -> Result<u64, Self::Error> {
+        let (query, ps) = data.clone().update_query_with_params();
+        let affected_rows = self.sql_exec(query, Params::<V>(ps)).await?;
+
+        if affected_rows == 0 {
+            self.create(data).await
+        } else {
+            Ok(affected_rows)
+        }
     }
 
     async fn load_with2<T: SQLTable, U: SQLMapper<ValueType = V> + Sync + Send>(
