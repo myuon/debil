@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.1.0] - 2020-01-19
+## v0.1.1 - 2020-01-19
+
+* Fix `save` query
+  * Now `UPDATE` first and `INSERT` if needed
+
+## v0.1.0 - 2020-01-19
 
 * First Release
 
