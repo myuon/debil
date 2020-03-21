@@ -1,6 +1,6 @@
 [package]
 name = "debil"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["myuon <ioi.joi.koi.loi@gmail.com>"]
 edition = "2018"
 license = "MIT"
