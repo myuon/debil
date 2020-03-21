@@ -135,12 +135,12 @@ fn add_index() {
 
     assert_eq!(
         create_unique_index_query::<Ex4>("hoge", vec!["aaaa"]),
-        "CREATE UNIQUE INDEX hoge ON ex_1(aaaa);"
+        "CREATE UNIQUE INDEX IF NOT EXISTS hoge ON ex_1(aaaa);"
     );
 
     assert_eq!(
         create_index_query::<Ex4>("hoge", vec!["aaaa"]),
-        "CREATE INDEX hoge ON ex_1(aaaa);"
+        "CREATE INDEX IF NOT EXISTS hoge ON ex_1(aaaa);"
     );
 }
 

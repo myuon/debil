@@ -80,7 +80,7 @@ pub trait SQLTable: SQLMapper {
             }
         }
         format!(
-            "CREATE INDEX {} ON {}({});",
+            "CREATE INDEX IF NOT EXISTS {} ON {}({});",
             index_name,
             table_name,
             index_keys.join(","),
@@ -107,7 +107,7 @@ pub trait SQLTable: SQLMapper {
         }
 
         format!(
-            "CREATE UNIQUE INDEX {} ON {}({});",
+            "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {}({});",
             index_name,
             table_name,
             index_keys.join(","),
