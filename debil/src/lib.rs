@@ -10,3 +10,6 @@ mod query;
 pub use query::*;
 
 pub mod binary;
+
+mod macros;
+pub use macros::*;

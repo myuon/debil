@@ -29,7 +29,7 @@ impl Parse for AttrInput {
 impl AttrInput {
     fn to_table_attr(self, table_name: String) -> TableAttr {
         let mut table = TableAttr {
-            table_name: table_name,
+            table_name,
             primary_key: vec![],
             sql_type: quote! { Vec<u8> },
         };
@@ -200,7 +200,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     if primary_key_columns.len() == 0 {
         panic!("At least one primary key must be specified")
     }
-    // checking existince of keys specified as primary key
+    // checking existence of keys specified as primary key
     for pk_column_name in primary_key_columns.iter() {
         if !field_struct
             .iter()
@@ -286,6 +286,35 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
                 result
             }
+        }
+    };
+
+    proc_macro::TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(Accessor)]
+pub fn derive_accessor(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let ident = input.ident;
+    let field_struct = get_fields_from_datastruct(input.data);
+
+    let accessor_functions = field_struct
+        .into_iter()
+        .map(|item| {
+            let field_name = item.0;
+
+            quote! {
+                 fn #field_name() -> &'static str {
+                     stringify!(#field_name)
+                 }
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let expanded = quote! {
+        impl #ident {
+            #( #accessor_functions )*
         }
     };
 

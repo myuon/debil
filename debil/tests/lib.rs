@@ -158,3 +158,15 @@ fn add_index_key_not_found() {
     }
     create_index_query::<Ex5>("hoge", vec!["field5"]);
 }
+
+#[derive(Accessor)]
+struct Foo {
+    hoge: i32,
+    piyo: String,
+}
+
+#[test]
+fn test_accessor() {
+    assert_eq!(Foo::hoge(), "hoge");
+    assert_eq!(Foo::piyo(), "piyo");
+}
