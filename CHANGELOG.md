@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.0 - 2020-03-22
+
+* `debil-derive` now supports `Accessor` proc-macro.
+* `debil` supports `accessor!` macro, which helps using `Accessor` derives.
+
 ## v0.1.2 - 2020-03-22
 
 * Fix #5

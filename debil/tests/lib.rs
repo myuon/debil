@@ -165,6 +165,15 @@ struct Foo {
     piyo: String,
 }
 
+impl Foo {
+    pub fn new() -> Foo {
+        Foo {
+            hoge: 10,
+            piyo: "foo".to_string(),
+        }
+    }
+}
+
 #[test]
 fn test_accessor() {
     assert_eq!(Foo::hoge(), "hoge");
