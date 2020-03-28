@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! accessor {
     ($t: ident :: $v: ident) => {
         <$t>::$v()

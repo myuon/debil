@@ -178,4 +178,5 @@ impl Foo {
 fn test_accessor() {
     assert_eq!(Foo::hoge(), "hoge");
     assert_eq!(Foo::piyo(), "piyo");
+    assert_eq!(accessor!(Foo::hoge), "hoge");
 }
