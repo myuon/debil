@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1 - 2020-04-06
+
+* Fix `accessor!` macro
+
 ## v0.3.0 - 2020-04-06
 
 * Now `accessor!` macro generates prefixed name like `table_name.column`. A new macro `accessor_name!` is provided, which is compatible with old accessor macro.
