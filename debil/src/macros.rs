@@ -1,11 +1,19 @@
 #[macro_export]
 macro_rules! accessor {
     ($t: ident :: $v: ident) => {
+        format!("{}.{}", crate::table_name::<$t>(), <$t>::$v())
+    };
+}
+
+#[macro_export]
+macro_rules! accessor_name {
+    ($t: ident :: $v: ident) => {
         <$t>::$v()
     };
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod test {
     struct H {
         f: usize,
@@ -18,6 +26,6 @@ mod test {
     }
 
     fn k() {
-        accessor!(H::f);
+        accessor_name!(H::f);
     }
 }

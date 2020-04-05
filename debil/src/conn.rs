@@ -1,6 +1,5 @@
 use crate::{QueryBuilder, SQLMapper, SQLTable};
 use async_trait::async_trait;
-use std::collections::HashMap;
 
 pub struct Params<ValueType>(pub Vec<(String, ValueType)>);
 

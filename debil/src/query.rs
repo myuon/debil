@@ -215,7 +215,7 @@ impl QueryBuilder {
             // LIMIT clause
             limit_clause,
         ]
-        .into_iter()
+        .iter()
         .filter(|s| s.len() != 0)
         .cloned()
         .collect::<Vec<_>>()
