@@ -8,6 +8,24 @@ pub enum JoinType {
 }
 
 #[derive(Clone, Debug)]
+pub enum Ordering {
+    Ascending,
+    Descending,
+}
+
+impl Ordering {
+    pub fn to_string(&self) -> String {
+        use Ordering::*;
+
+        match self {
+            Ascending => "ASC",
+            Descending => "DESC",
+        }
+        .to_string()
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct QueryBuilder {
     selects: Vec<String>,
     from: Option<String>,
@@ -15,6 +33,7 @@ pub struct QueryBuilder {
     limit: Option<i32>,
     joins: Vec<(JoinType, String, String, String)>,
     groups: Vec<String>,
+    orders: Vec<(String, Ordering)>,
 }
 
 impl QueryBuilder {
@@ -26,6 +45,7 @@ impl QueryBuilder {
             limit: None,
             joins: vec![],
             groups: vec![],
+            orders: vec![],
         }
     }
 
@@ -63,6 +83,12 @@ impl QueryBuilder {
 
     pub fn limit(mut self, n: i32) -> QueryBuilder {
         self.limit = Some(n);
+
+        self
+    }
+
+    pub fn order_by(mut self, column_name: impl Into<String>, ordering: Ordering) -> Self {
+        self.orders.push((column_name.into(), ordering));
 
         self
     }
@@ -129,6 +155,7 @@ impl QueryBuilder {
             .unwrap_or("".to_string());
 
         [
+            // SELECT clause
             format!(
                 "SELECT {}",
                 if self.selects.is_empty() {
@@ -138,6 +165,7 @@ impl QueryBuilder {
                 }
             ),
             from,
+            // JOIN clause
             self.joins
                 .into_iter()
                 .map(|(jt, another_table, lhs, rhs)| {
@@ -158,16 +186,33 @@ impl QueryBuilder {
                 .collect::<Vec<_>>()
                 .as_slice()
                 .join(" "),
+            // WHERE clause
             if !self.wheres.is_empty() {
                 where_clause
             } else {
                 String::new()
             },
+            // GROUP BY clause
             if !self.groups.is_empty() {
                 format!("GROUP BY {}", self.groups.as_slice().join(", "))
             } else {
                 String::new()
             },
+            // ORDER BY clause
+            if !self.orders.is_empty() {
+                format!(
+                    "ORDER BY {}",
+                    self.orders
+                        .into_iter()
+                        .map(|(k, o)| format!("{} {}", k, o.to_string()))
+                        .collect::<Vec<_>>()
+                        .as_slice()
+                        .join(", ")
+                )
+            } else {
+                String::new()
+            },
+            // LIMIT clause
             limit_clause,
         ]
         .into_iter()
@@ -256,5 +301,13 @@ fn query_with_build() {
             .group_by(vec!["a", "b", "c"])
             .build(),
         "SELECT * FROM foo GROUP BY a, b, c"
+    );
+    assert_eq!(
+        QueryBuilder::new()
+            .table("foo")
+            .order_by("piyo", Ordering::Ascending)
+            .order_by("nyan", Ordering::Descending)
+            .build(),
+        "SELECT * FROM foo ORDER BY piyo ASC, nyan DESC"
     );
 }
