@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! accessor {
     ($t: ident :: $v: ident) => {
-        format!("{}.{}", crate::table_name::<$t>(), <$t>::$v())
+        format!("{}.{}", debil::table_name::<$t>(), <$t>::$v())
     };
 }
 
