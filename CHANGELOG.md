@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.2 - 2020-04-21
+
+* Make accessors public
+
 ## v0.3.1 - 2020-04-06
 
 * Fix `accessor!` macro
