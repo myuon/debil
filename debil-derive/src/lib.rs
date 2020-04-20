@@ -305,7 +305,7 @@ pub fn derive_accessor(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
             let field_name = item.0;
 
             quote! {
-                 fn #field_name() -> &'static str {
+                 pub fn #field_name() -> &'static str {
                      stringify!(#field_name)
                  }
             }
