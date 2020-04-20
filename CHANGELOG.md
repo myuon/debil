@@ -2,7 +2,7 @@
 
 ## v0.3.2 - 2020-04-21
 
-* Make accessors public
+* Bump the version of `debil-derive`
 
 ## v0.3.1 - 2020-04-06
 
