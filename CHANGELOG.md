@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0 - 2021-01-18
+
+* Add record_expr! macro, which can be used to construct a query with some filtering conditions type-safely
+* Support record_expr! macro into QueryBuilder::wheres method
+* **BREAKING CHANGE**: Rename load_with/first_with to load/first and remove legacy load/first methods.
+
 ## v0.3.3 - 2020-04-21
 
 * Bump the version of `debil-derive`
