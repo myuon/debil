@@ -76,7 +76,7 @@ macro_rules! record_expr {
 #[cfg(test)]
 #[allow(dead_code)]
 mod test_record_expr {
-    use crate::{SQLMapper, SQLTable, SQLValue};
+    use crate::{SQLMapper, SQLTable};
 
     #[derive(Default)]
     struct H {

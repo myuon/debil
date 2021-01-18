@@ -66,13 +66,13 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         }
     }
 
-    async fn load_with2<T: SQLTable, U: SQLMapper<ValueType = V> + Sync + Send>(
+    async fn load2<T: SQLTable, U: SQLMapper<ValueType = V> + Sync + Send>(
         &mut self,
-        builder: QueryBuilder,
+        builder: QueryBuilder<V>,
     ) -> Result<Vec<U>, Self::Error> {
         let schema = SQLTable::schema_of(std::marker::PhantomData::<T>);
         let table_name = SQLTable::table_name(std::marker::PhantomData::<T>);
-        let query = builder
+        let (query, params) = builder
             .table(table_name.clone())
             .append_selects(
                 schema
@@ -81,23 +81,23 @@ pub trait SQLConn<V: 'static + Sync + Send> {
                     .collect::<Vec<_>>(),
             )
             .build();
-        self.sql_query::<U>(query, Params(Vec::new())).await
+        self.sql_query::<U>(query, params).await
     }
 
-    async fn load_with<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn load<T: SQLTable<ValueType = V> + Sync + Send>(
         &mut self,
-        builder: QueryBuilder,
+        builder: QueryBuilder<V>,
     ) -> Result<Vec<T>, Self::Error> {
-        self.load_with2::<T, T>(builder).await
+        self.load2::<T, T>(builder).await
     }
 
-    async fn first_with<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn first<T: SQLTable<ValueType = V> + Sync + Send>(
         &mut self,
-        builder: QueryBuilder,
+        builder: QueryBuilder<V>,
     ) -> Result<T, Self::Error> {
         let schema = SQLTable::schema_of(std::marker::PhantomData::<T>);
         let table_name = SQLTable::table_name(std::marker::PhantomData::<T>);
-        let query = builder
+        let (query, params) = builder
             .table(table_name.clone())
             .append_selects(
                 schema
@@ -108,18 +108,8 @@ pub trait SQLConn<V: 'static + Sync + Send> {
             .limit(1)
             .build();
 
-        self.sql_query::<T>(query, Params(Vec::new()))
+        self.sql_query::<T>(query, params)
             .await
             .and_then(|mut vs| vs.pop().ok_or(HasNotFound::not_found()))
-    }
-
-    async fn load<T: SQLTable<ValueType = V> + Sync + Send>(
-        &mut self,
-    ) -> Result<Vec<T>, Self::Error> {
-        self.load_with(QueryBuilder::new()).await
-    }
-
-    async fn first<T: SQLTable<ValueType = V> + Sync + Send>(&mut self) -> Result<T, Self::Error> {
-        self.first_with(QueryBuilder::new()).await
     }
 }
