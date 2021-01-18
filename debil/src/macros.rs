@@ -39,45 +39,36 @@ macro_rules! record_expr {
     (@wrapper $var:ident, $name:ident, $($body:tt)*) => {
         {
             let mut result = vec![];
+            let mut params = vec![];
             let mut $var: $name = Default::default();
 
-            record_expr!(@record_expr result, $var, $name, $($body)*)
+            record_expr!(@record_expr result, params, $var, $name, $($body)*)
         }
     };
 
-    (@record_expr $result:ident, $var:ident, $name:ident, $field:ident : ? $(,)?) => {
+    (@record_expr $result:ident, $params:ident, $var:ident, $name:ident, $field:ident : $e:expr $(,)?) => {
         {
-            $result.push(format!("{} = ?", accessor!($name::$field)));
+            let expr = $e;
+            $var.$field = expr.clone();
 
-            $result
+            let params_name = format!(":{}", accessor_name!($name::$field));
+            $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
+            $params.push((params_name, SQLValue::serialize(expr)));
+
+            ($result, $params)
         }
     };
 
-    (@record_expr $result:ident, $var:ident, $name:ident, $field:ident : $e:expr $(,)?) => {
+    (@record_expr $result:ident, $params:ident, $var:ident, $name:ident, $field:ident : $e:expr, $($tails:tt)*) => {
         {
-            $var.$field = $e;
+            let expr = $e;
+            $var.$field = expr.clone();
 
-            $result.push(format!("{} = {}", accessor!($name::$field), $e));
+            let params_name = format!(":{}", accessor_name!($name::$field));
+            $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
+            $params.push((params_name, SQLValue::serialize(expr)));
 
-            $result
-        }
-    };
-
-    (@record_expr $result:ident, $var:ident, $name:ident, $field:ident : ?, $($tails:tt)*) => {
-        {
-            $result.push(format!("{} = ?", accessor!($name::$field)));
-
-            record_expr!(@record_expr $result, $var, $name, $($tails)*)
-        }
-    };
-
-    (@record_expr $result:ident, $var:ident, $name:ident, $field:ident : $e:tt, $($tails:tt)*) => {
-        {
-            $var.$field = $e;
-
-            $result.push(format!("{} = {}", accessor!($name::$field), $e));
-
-            record_expr!(@record_expr $result, $var, $name, $($tails)*)
+            record_expr!(@record_expr $result, $params, $var, $name, $($tails)*)
         }
     };
 }
@@ -85,11 +76,11 @@ macro_rules! record_expr {
 #[cfg(test)]
 #[allow(dead_code)]
 mod test_record_expr {
-    use crate::{SQLMapper, SQLTable};
+    use crate::{SQLMapper, SQLTable, SQLValue};
 
     #[derive(Default)]
     struct H {
-        f: usize,
+        f: i32,
         g: String,
     }
 
@@ -104,7 +95,7 @@ mod test_record_expr {
     }
 
     impl SQLMapper for H {
-        type ValueType = ();
+        type ValueType = Vec<u8>;
 
         fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self {
             todo!()
@@ -133,25 +124,42 @@ mod test_record_expr {
 
     #[test]
     fn record_expr() {
+        use crate::types::SQLValue;
+
         // single equation
-        assert_eq!(record_expr!(H, { f: 2000 }), vec!["table_H.foo = 2000"]);
+        assert_eq!(
+            record_expr!(H, { f: 2000 }),
+            (
+                vec!["table_H.foo = :foo".to_string()],
+                vec![(":foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+            )
+        );
 
         // trailing comma
-        assert_eq!(record_expr!(H, { f: 2000, }), vec!["table_H.foo = 2000"]);
+        assert_eq!(
+            record_expr!(H, { f: 2000, }),
+            (
+                vec!["table_H.foo = :foo".to_string()],
+                vec![(":foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+            )
+        );
 
         // This gives you a type error!
-        // assert_eq!(record_expr!(H, { f: "fooo" }), vec!["table_H.foo = fooo"]);
+        // record_expr!(H, { f: "fooo" })
 
         // multiple columns
         assert_eq!(
-            record_expr!(H, { f: 2000, g: "'fooo'".to_string() }),
-            vec!["table_H.foo = 2000", "table_H.g = 'fooo'"]
-        );
-
-        // with ? placeholders
-        assert_eq!(
-            record_expr!(H, { f: ?, g: ? }),
-            vec!["table_H.foo = ?", "table_H.g = ?"]
+            record_expr!(H, { f: 2000, g: "fooo".to_string() }),
+            (
+                vec![
+                    "table_H.foo = :foo".to_string(),
+                    "table_H.g = :g".to_string()
+                ],
+                vec![
+                    (":foo".to_string(), SQLValue::serialize(2000)),
+                    (":g".to_string(), SQLValue::serialize("fooo".to_string()))
+                ] as Vec<(String, Vec<u8>)>
+            )
         );
     }
 }
