@@ -53,7 +53,7 @@ macro_rules! record_expr {
 
             let params_name = format!(":{}", accessor_name!($name::$field));
             $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
-            $params.push((params_name, SQLValue::serialize(expr)));
+            $params.push((accessor_name!($name::$field).to_string(), SQLValue::serialize(expr)));
 
             ($result, $params)
         }
@@ -66,7 +66,7 @@ macro_rules! record_expr {
 
             let params_name = format!(":{}", accessor_name!($name::$field));
             $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
-            $params.push((params_name, SQLValue::serialize(expr)));
+            $params.push((accessor_name!($name::$field).to_string(), SQLValue::serialize(expr)));
 
             record_expr!(@record_expr $result, $params, $var, $name, $($tails)*)
         }
@@ -131,7 +131,7 @@ mod test_record_expr {
             record_expr!(H, { f: 2000 }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![(":foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
             )
         );
 
@@ -140,7 +140,7 @@ mod test_record_expr {
             record_expr!(H, { f: 2000, }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![(":foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
             )
         );
 
@@ -156,8 +156,8 @@ mod test_record_expr {
                     "table_H.g = :g".to_string()
                 ],
                 vec![
-                    (":foo".to_string(), SQLValue::serialize(2000)),
-                    (":g".to_string(), SQLValue::serialize("fooo".to_string()))
+                    ("foo".to_string(), SQLValue::serialize(2000)),
+                    ("g".to_string(), SQLValue::serialize("fooo".to_string()))
                 ] as Vec<(String, Vec<u8>)>
             )
         );
