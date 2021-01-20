@@ -74,10 +74,11 @@ impl<V> QueryBuilder<V> {
 
     pub fn wheres<S: Into<String>>(
         mut self,
-        (cond, params): (Vec<S>, Vec<(String, V)>),
+        (cond, mut params): (Vec<S>, Vec<(String, V)>),
     ) -> QueryBuilder<V> {
         self.wheres
             .append(&mut cond.into_iter().map(|v| v.into()).collect::<Vec<_>>());
+        self.binds.append(&mut params);
 
         self
     }
