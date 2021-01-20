@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 - 2021-01-20
+
+* Fixes binds problem for QueryBuilder when using wheres method
+
 ## v0.4.0 - 2021-01-18
 
 * Add record_expr! macro, which can be used to construct a query with some filtering conditions type-safely
