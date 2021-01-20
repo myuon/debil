@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.2 - 2021-01-20
+
+* Fixes params name problem
+
 ## v0.4.1 - 2021-01-20
 
 * Fixes binds problem for QueryBuilder when using wheres method
