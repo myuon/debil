@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate as debil;
 use crate::{HasNotFound, SqlConn, SqlValue};
 use async_trait::async_trait;
@@ -146,8 +148,26 @@ impl SqlConn<SqliteValue> for DebilConn {
         params: debil::Params<SqliteValue>,
     ) -> Result<Vec<T>, Self::Error> {
         let vs = tokio::task::block_in_place(move || {
-            self.conn
-                .query_row(query.as_str(), to_params(&params).as_slice(), |row| todo!())
+            let mut stmt = self.conn.prepare(query.as_str())?;
+            let mut rows = stmt.query(to_params(&params).as_slice())?;
+
+            let mut vs = Vec::new();
+            while let Some(row) = rows.next()? {
+                let stmt = row.as_ref();
+
+                // TODO: cache names
+                let mut m = HashMap::new();
+                for name in stmt.column_names() {
+                    m.insert(
+                        name.to_string(),
+                        SqliteValue(row.get(stmt.column_index(name)?)?),
+                    );
+                }
+
+                vs.push(debil::map_from_sql::<T>(m));
+            }
+
+            Ok(vs)
         })
         .map_err(|err| Error::SqliteError(err))?;
 
