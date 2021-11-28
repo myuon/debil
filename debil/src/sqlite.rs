@@ -1,16 +1,14 @@
-use std::sync::{Arc, Mutex};
-
 use crate as debil;
 use crate::{HasNotFound, SQLConn, SQLValue};
 use async_trait::async_trait;
-use failure::Fail;
+use failure::*;
 
-pub enum SqliteValue {
-    Null,
-    Integer(i64),
-    Real(f64),
-    Text(String),
-    Blob(Vec<u8>),
+pub struct SqliteValue(rusqlite::types::Value);
+
+impl rusqlite::ToSql for SqliteValue {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        self.0.to_sql()
+    }
 }
 
 impl SQLValue<()> for SqliteValue {
@@ -19,7 +17,7 @@ impl SQLValue<()> for SqliteValue {
     }
 
     fn serialize(_: ()) -> Self {
-        SqliteValue::Null
+        SqliteValue(rusqlite::types::Value::Null)
     }
 
     fn deserialize(self) -> () {
@@ -33,13 +31,13 @@ impl SQLValue<i64> for SqliteValue {
     }
 
     fn serialize(s: i64) -> Self {
-        SqliteValue::Integer(s)
+        SqliteValue(rusqlite::types::Value::Integer(s))
     }
 
     fn deserialize(self) -> i64 {
         match self {
-            SqliteValue::Integer(s) => s,
-            _ => panic!("Expected integer"),
+            SqliteValue(rusqlite::types::Value::Integer(s)) => s,
+            _ => panic!("SqliteValue::deserialize: invalid type"),
         }
     }
 }
@@ -50,13 +48,13 @@ impl SQLValue<f64> for SqliteValue {
     }
 
     fn serialize(s: f64) -> Self {
-        SqliteValue::Real(s)
+        SqliteValue(rusqlite::types::Value::Real(s))
     }
 
     fn deserialize(self) -> f64 {
         match self {
-            SqliteValue::Real(s) => s,
-            _ => panic!("Expected real"),
+            SqliteValue(rusqlite::types::Value::Real(s)) => s,
+            _ => panic!("SqliteValue::deserialize: invalid type"),
         }
     }
 }
@@ -67,13 +65,13 @@ impl SQLValue<String> for SqliteValue {
     }
 
     fn serialize(s: String) -> Self {
-        SqliteValue::Text(s)
+        SqliteValue(rusqlite::types::Value::Text(s))
     }
 
     fn deserialize(self) -> String {
         match self {
-            SqliteValue::Text(s) => s,
-            _ => panic!("Expected text"),
+            SqliteValue(rusqlite::types::Value::Text(s)) => s,
+            _ => panic!("SqliteValue::deserialize: invalid type"),
         }
     }
 }
@@ -84,27 +82,26 @@ impl SQLValue<Vec<u8>> for SqliteValue {
     }
 
     fn serialize(s: Vec<u8>) -> Self {
-        SqliteValue::Blob(s)
+        SqliteValue(rusqlite::types::Value::Blob(s))
     }
 
     fn deserialize(self) -> Vec<u8> {
         match self {
-            SqliteValue::Blob(s) => s,
-            _ => panic!("Expected blob"),
+            SqliteValue(rusqlite::types::Value::Blob(s)) => s,
+            _ => panic!("SqliteValue::deserialize: invalid type"),
         }
     }
 }
 
-fn to_params(params: debil::Params<SqliteValue>) -> impl rusqlite::Params {
+fn to_params(params: &debil::Params<SqliteValue>) -> Vec<(&str, &dyn rusqlite::ToSql)> {
     if params.0.len() == 0 {
-        &[]
+        vec![]
     } else {
         params
             .0
-            .into_iter()
-            .map(|(k, v)| (&k, v.0))
-            .collect::<Vec<(&str, &dyn rusqlite::ToSql)>>()
-            .as_slice()
+            .iter()
+            .map(|(k, v)| (k.as_str(), &v.0 as &dyn rusqlite::ToSql))
+            .collect::<Vec<_>>()
     }
 }
 
@@ -124,11 +121,11 @@ impl HasNotFound for Error {
     }
 }
 
-/*
 pub struct DebilConn {
-    conn: Arc<Mutex<rusqlite::Connection>>,
+    conn: rusqlite::Connection,
 }
 
+// This impl uses tokio::task::block_in_place, which could lead to a problem in some specific situations;
 #[async_trait]
 impl SQLConn<SqliteValue> for DebilConn {
     type Error = Error;
@@ -138,14 +135,10 @@ impl SQLConn<SqliteValue> for DebilConn {
         query: String,
         params: debil::Params<SqliteValue>,
     ) -> Result<u64, Error> {
-        let rows = tokio::task::spawn_blocking(move || {
+        let rows = tokio::task::block_in_place(move || {
             self.conn
-                .lock()
-                .unwrap()
-                .execute(query.as_str(), to_params(params))
+                .execute(query.as_str(), to_params(&params).as_slice())
         })
-        .await
-        .map_err(|err| Error::TokioError(err))?
         .map_err(|err| Error::SqliteError(err))?;
 
         Ok(rows as u64)
@@ -156,29 +149,11 @@ impl SQLConn<SqliteValue> for DebilConn {
         query: String,
         params: debil::Params<SqliteValue>,
     ) -> Result<Vec<T>, Self::Error> {
-        let result = self.conn.exec(query.as_str(), to_params(params)).await?;
-        let vs = result
-            .into_iter()
-            .map(|row: mysql_async::Row| {
-                let column_names = row
-                    .columns_ref()
-                    .iter()
-                    .map(|c| c.name_str().into_owned())
-                    .collect::<Vec<_>>();
-                let values = row
-                    .unwrap()
-                    .into_iter()
-                    .map(SqliteValue)
-                    .collect::<Vec<_>>();
-
-                debil::map_from_sql::<T>(
-                    column_names
-                        .into_iter()
-                        .zip(values)
-                        .collect::<std::collections::HashMap<_, _>>(),
-                )
-            })
-            .collect();
+        let vs = tokio::task::block_in_place(move || {
+            self.conn
+                .query_row(query.as_str(), to_params(&params).as_slice(), |row| todo!())
+        })
+        .map_err(|err| Error::SqliteError(err))?;
 
         Ok(vs)
     }
@@ -186,16 +161,12 @@ impl SQLConn<SqliteValue> for DebilConn {
     async fn sql_batch_exec(
         &mut self,
         query: String,
-        params_vec: Vec<debil::Params<MySQLValue>>,
+        params_vec: Vec<debil::Params<SqliteValue>>,
     ) -> Result<(), Self::Error> {
-        self.conn
-            .exec_batch(
-                query.as_str(),
-                params_vec.into_iter().map(to_params).collect::<Vec<_>>(),
-            )
-            .await?;
+        for params in params_vec {
+            self.sql_exec(query.clone(), params).await?;
+        }
 
         Ok(())
     }
 }
-*/

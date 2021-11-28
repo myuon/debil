@@ -1,8 +1,8 @@
+use crate as debil;
+use crate::conn::SQLConn;
 use crate::mysql::error::Error;
 use crate::mysql::types::MySQLValue;
 use async_trait::async_trait;
-use crate as debil;
-use crate::conn::SQLConn;
 use mysql_async::prelude::*;
 
 pub struct DebilConn {
