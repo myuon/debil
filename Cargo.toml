@@ -2,4 +2,5 @@
 members = [
     "debil",
     "debil-derive",
+    "debil-sqlite",
 ]
