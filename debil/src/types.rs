@@ -44,7 +44,7 @@ pub fn create_column_query(
 }
 
 pub trait SqlMapper: Sized {
-    type ValueType;
+    type ValueType: Clone;
     fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self;
 }
 

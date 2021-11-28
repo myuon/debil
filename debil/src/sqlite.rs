@@ -4,6 +4,7 @@ use crate as debil;
 use crate::{HasNotFound, SqlConn, SqlValue};
 use async_trait::async_trait;
 
+#[derive(Clone)]
 pub struct SqliteValue(rusqlite::types::Value);
 
 impl rusqlite::ToSql for SqliteValue {
@@ -121,6 +122,12 @@ impl HasNotFound for Error {
 
 pub struct DebilConn {
     conn: rusqlite::Connection,
+}
+
+impl DebilConn {
+    pub fn new(conn: rusqlite::Connection) -> Self {
+        Self { conn }
+    }
 }
 
 // This impl uses tokio::task::block_in_place, which could lead to a problem in some specific situations;
