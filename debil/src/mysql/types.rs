@@ -1,5 +1,6 @@
+use std::marker::PhantomData;
+
 use crate::SqlValue;
-use failure::_core::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct MySQLValue(pub mysql_async::Value);

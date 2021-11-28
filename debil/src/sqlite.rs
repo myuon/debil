@@ -1,7 +1,6 @@
 use crate as debil;
 use crate::{HasNotFound, SqlConn, SqlValue};
 use async_trait::async_trait;
-use failure::*;
 
 pub struct SqliteValue(rusqlite::types::Value);
 
@@ -105,14 +104,11 @@ fn to_params(params: &debil::Params<SqliteValue>) -> Vec<(&str, &dyn rusqlite::T
     }
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug)]
 pub enum Error {
-    #[fail(display = "not_found")]
     NotFoundError,
-    #[fail(display = "sqlite_error")]
-    SqliteError(#[cause] rusqlite::Error),
-    #[fail(display = "tokio_error")]
-    TokioError(#[cause] tokio::task::JoinError),
+    SqliteError(rusqlite::Error),
+    TokioError(tokio::task::JoinError),
 }
 
 impl HasNotFound for Error {

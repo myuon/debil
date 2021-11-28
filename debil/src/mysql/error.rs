@@ -1,11 +1,7 @@
-use failure::Fail;
-
-#[derive(Debug, Fail)]
+#[derive(Debug)]
 pub enum Error {
-    #[fail(display = "not_found")]
     NotFoundError,
-    #[fail(display = "mysql_error")]
-    MySQLError(#[cause] mysql_async::Error),
+    MySQLError(mysql_async::Error),
 }
 
 impl From<mysql_async::Error> for Error {
