@@ -53,7 +53,7 @@ macro_rules! record_expr {
 
             let params_name = format!(":{}", accessor_name!($name::$field));
             $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
-            $params.push((accessor_name!($name::$field).to_string(), SQLValue::serialize(expr)));
+            $params.push((accessor_name!($name::$field).to_string(), SqlValue::serialize(expr)));
 
             ($result, $params)
         }
@@ -66,7 +66,7 @@ macro_rules! record_expr {
 
             let params_name = format!(":{}", accessor_name!($name::$field));
             $result.push(format!("{} = {}", accessor!($name::$field), &params_name));
-            $params.push((accessor_name!($name::$field).to_string(), SQLValue::serialize(expr)));
+            $params.push((accessor_name!($name::$field).to_string(), SqlValue::serialize(expr)));
 
             record_expr!(@record_expr $result, $params, $var, $name, $($tails)*)
         }
@@ -76,7 +76,7 @@ macro_rules! record_expr {
 #[cfg(test)]
 #[allow(dead_code)]
 mod test_record_expr {
-    use crate::{SQLMapper, SQLTable};
+    use crate::{SqlMapper, SqlTable};
 
     #[derive(Default)]
     struct H {
@@ -94,7 +94,7 @@ mod test_record_expr {
         }
     }
 
-    impl SQLMapper for H {
+    impl SqlMapper for H {
         type ValueType = Vec<u8>;
 
         fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self {
@@ -102,7 +102,7 @@ mod test_record_expr {
         }
     }
 
-    impl SQLTable for H {
+    impl SqlTable for H {
         fn table_name(_: std::marker::PhantomData<Self>) -> String {
             "table_H".to_string()
         }
@@ -124,14 +124,14 @@ mod test_record_expr {
 
     #[test]
     fn record_expr() {
-        use crate::types::SQLValue;
+        use crate::types::SqlValue;
 
         // single equation
         assert_eq!(
             record_expr!(H, { f: 2000 }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![("foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Vec<u8>)>
             )
         );
 
@@ -140,7 +140,7 @@ mod test_record_expr {
             record_expr!(H, { f: 2000, }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![("foo".to_string(), SQLValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Vec<u8>)>
             )
         );
 
@@ -156,8 +156,8 @@ mod test_record_expr {
                     "table_H.g = :g".to_string()
                 ],
                 vec![
-                    ("foo".to_string(), SQLValue::serialize(2000)),
-                    ("g".to_string(), SQLValue::serialize("fooo".to_string()))
+                    ("foo".to_string(), SqlValue::serialize(2000)),
+                    ("g".to_string(), SqlValue::serialize("fooo".to_string()))
                 ] as Vec<(String, Vec<u8>)>
             )
         );

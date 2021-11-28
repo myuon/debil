@@ -46,9 +46,9 @@ fn it_derives_sql_table() {
     assert_eq!(
         ex1.clone().map_to_sql(),
         vec![
-            ("field1".to_string(), SQLValue::serialize("aaa".to_string())),
-            ("aaaa".to_string(), SQLValue::serialize(10)),
-            ("pk".to_string(), SQLValue::serialize(1))
+            ("field1".to_string(), SqlValue::serialize("aaa".to_string())),
+            ("aaaa".to_string(), SqlValue::serialize(10)),
+            ("pk".to_string(), SqlValue::serialize(1))
         ]
     );
     assert_eq!(
@@ -64,10 +64,10 @@ fn it_derives_sql_table() {
         vec![
             (
                 "field1".to_string(),
-                SQLValue::serialize("piyo".to_string()),
+                SqlValue::serialize("piyo".to_string()),
             ),
-            ("aaaa".to_string(), SQLValue::serialize(-10000)),
-            ("pk".to_string(), SQLValue::serialize(200)),
+            ("aaaa".to_string(), SqlValue::serialize(-10000)),
+            ("pk".to_string(), SqlValue::serialize(200)),
         ]
         .into_iter()
         .collect(),
@@ -82,12 +82,12 @@ fn it_derives_sql_table() {
     );
 
     assert_eq!(
-        SQLTable::create_table_query(std::marker::PhantomData::<Ex1>),
+        SqlTable::create_table_query(std::marker::PhantomData::<Ex1>),
         "CREATE TABLE IF NOT EXISTS ex_1 (field1 varchar(50) UNIQUE NOT NULL, aaaa int, pk int, CONSTRAINT primary_key PRIMARY KEY(pk))"
     );
 
     assert_eq!(
-        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex1>),
+        SqlTable::constraint_primary_key_query(std::marker::PhantomData::<Ex1>),
         "CONSTRAINT primary_key PRIMARY KEY(pk)"
     )
 }
@@ -110,7 +110,7 @@ fn composite_primary_key() {
     }
 
     assert_eq!(
-        SQLTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
+        SqlTable::constraint_primary_key_query(std::marker::PhantomData::<Ex2>),
         "CONSTRAINT primary_key PRIMARY KEY(pk,pk2)"
     );
 

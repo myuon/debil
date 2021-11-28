@@ -1,5 +1,5 @@
 use crate as debil;
-use crate::conn::SQLConn;
+use crate::conn::SqlConn;
 use crate::mysql::error::Error;
 use crate::mysql::types::MySQLValue;
 use async_trait::async_trait;
@@ -29,7 +29,7 @@ fn to_params(params: debil::Params<MySQLValue>) -> params::Params {
 }
 
 #[async_trait]
-impl debil::SQLConn<MySQLValue> for DebilConn {
+impl debil::SqlConn<MySQLValue> for DebilConn {
     type Error = Error;
 
     async fn sql_exec(
@@ -44,7 +44,7 @@ impl debil::SQLConn<MySQLValue> for DebilConn {
         Ok(self.conn.affected_rows())
     }
 
-    async fn sql_query<T: debil::SQLMapper<ValueType = MySQLValue> + Sync + Send>(
+    async fn sql_query<T: debil::SqlMapper<ValueType = MySQLValue> + Sync + Send>(
         &mut self,
         query: String,
         params: debil::Params<MySQLValue>,
@@ -108,13 +108,13 @@ impl DebilConn {
         Ok(result.into_iter().map(mapper).collect())
     }
 
-    pub async fn drop_table<T: debil::SQLTable<ValueType = MySQLValue> + Sync + Send>(
+    pub async fn drop_table<T: debil::SqlTable<ValueType = MySQLValue> + Sync + Send>(
         &mut self,
     ) -> Result<(), Error> {
         self.sql_exec(
             format!(
                 "DROP TABLE IF EXISTS {}",
-                debil::SQLTable::table_name(std::marker::PhantomData::<T>),
+                debil::SqlTable::table_name(std::marker::PhantomData::<T>),
             ),
             debil::Params::<MySQLValue>::new(),
         )
@@ -123,13 +123,13 @@ impl DebilConn {
         Ok(())
     }
 
-    pub async fn migrate<T: debil::SQLTable<ValueType = MySQLValue> + Sync + Send>(
+    pub async fn migrate<T: debil::SqlTable<ValueType = MySQLValue> + Sync + Send>(
         &mut self,
     ) -> Result<(), Error> {
         self.create_table::<T>().await?;
 
-        let table_name = debil::SQLTable::table_name(std::marker::PhantomData::<T>);
-        let schema = debil::SQLTable::schema_of(std::marker::PhantomData::<T>);
+        let table_name = debil::SqlTable::table_name(std::marker::PhantomData::<T>);
+        let schema = debil::SqlTable::schema_of(std::marker::PhantomData::<T>);
 
         for (column_name, column_type, attr) in schema {
             let vs = self.sql_query_with_map("SELECT DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = :table_name AND COLUMN_NAME = :column_name", mysql_async::params!{
@@ -167,7 +167,7 @@ impl DebilConn {
         Ok(())
     }
 
-    pub async fn create_all<T: debil::SQLTable<ValueType = MySQLValue> + Clone>(
+    pub async fn create_all<T: debil::SqlTable<ValueType = MySQLValue> + Clone>(
         &mut self,
         datas: Vec<T>,
     ) -> Result<(), Error> {

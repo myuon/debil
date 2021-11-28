@@ -12,18 +12,18 @@ mod tests {
     }
 
     // custom implementation
-    impl SQLMapper for R {
+    impl SqlMapper for R {
         type ValueType = MySQLValue;
 
         fn map_from_sql(values: std::collections::HashMap<String, Self::ValueType>) -> Self {
             R {
-                s: <Self::ValueType as SQLValue<String>>::deserialize(values["s"].clone()),
-                n: <Self::ValueType as SQLValue<i32>>::deserialize(values["n"].clone()),
+                s: <Self::ValueType as SqlValue<String>>::deserialize(values["s"].clone()),
+                n: <Self::ValueType as SqlValue<i32>>::deserialize(values["n"].clone()),
             }
         }
     }
 
-    impl SQLTable for R {
+    impl SqlTable for R {
         fn table_name(_: std::marker::PhantomData<Self>) -> String {
             "r_table".to_string()
         }
@@ -47,11 +47,11 @@ mod tests {
             let mut result = Vec::new();
             result.push((
                 "s".to_string(),
-                <Self::ValueType as SQLValue<String>>::serialize(self.s),
+                <Self::ValueType as SqlValue<String>>::serialize(self.s),
             ));
             result.push((
                 "n".to_string(),
-                <Self::ValueType as SQLValue<i32>>::serialize(self.n),
+                <Self::ValueType as SqlValue<i32>>::serialize(self.n),
             ));
 
             result
@@ -91,7 +91,7 @@ mod tests {
         Ok(())
     }
 
-    async fn conn_load<R: debil::SQLTable<ValueType = MySQLValue> + Sync + Send>(
+    async fn conn_load<R: debil::SqlTable<ValueType = MySQLValue> + Sync + Send>(
         mut conn: DebilConn,
     ) {
         conn.load::<R>(QueryBuilder::new()).await.unwrap();

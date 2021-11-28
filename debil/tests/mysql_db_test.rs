@@ -35,7 +35,7 @@ mod tests {
         item_id: Option<String>,
     }
 
-    impl SQLMapper for JoinedUserItemsView {
+    impl SqlMapper for JoinedUserItemsView {
         type ValueType = MySQLValue;
 
         fn map_from_sql(

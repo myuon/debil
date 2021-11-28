@@ -221,7 +221,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .collect::<Vec<_>>();
     let push_field_names = field_struct
         .iter()
-        .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SQLValue::serialize(self.#ident))); })
+        .map(|(ident, _, _)| quote! { result.push((stringify!(#ident).to_string(), SqlValue::serialize(self.#ident))); })
         .collect::<Vec<_>>();
     let push_column_schema = field_struct
         .iter()
@@ -233,7 +233,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             let size_unopt = size_opt.unwrap_or(0);
 
             quote! {
-                result.push((stringify!(#ident).to_string(), <Self::ValueType as SQLValue<_>>::column_type(std::marker::PhantomData::<#ty>, #size_unopt), FieldAttribute {
+                result.push((stringify!(#ident).to_string(), <Self::ValueType as SqlValue<_>>::column_type(std::marker::PhantomData::<#ty>, #size_unopt), FieldAttribute {
                     size: #size,
                     unique: #unique,
                     not_null: #not_null,
@@ -245,7 +245,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .iter()
         .map(|(ident, _, _)| {
             quote! {
-                #ident: <Self::ValueType as SQLValue<_>>::deserialize(values.get(stringify!(#ident)).unwrap().clone()),
+                #ident: <Self::ValueType as SqlValue<_>>::deserialize(values.get(stringify!(#ident)).unwrap().clone()),
             }
         })
         .collect::<Vec<_>>();
@@ -253,7 +253,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     let sql_type = table_attr.sql_type;
 
     let expanded = quote! {
-        impl SQLMapper for #ident {
+        impl SqlMapper for #ident {
             type ValueType = #sql_type;
 
             fn map_from_sql(values: std::collections::HashMap<String, Self::ValueType>) -> Self {
@@ -263,7 +263,7 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             }
         }
 
-        impl SQLTable for #ident {
+        impl SqlTable for #ident {
             fn table_name(_: std::marker::PhantomData<Self>) -> String {
                 #table_name.to_string()
             }

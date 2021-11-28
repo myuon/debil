@@ -1,9 +1,9 @@
-use crate::types::SQLValue;
+use crate::types::SqlValue;
 use std::convert::TryFrom;
 
 // Vec<u8> serializer
 
-impl SQLValue<i32> for Vec<u8> {
+impl SqlValue<i32> for Vec<u8> {
     fn column_type(_: std::marker::PhantomData<i32>, _: i32) -> String {
         "int".to_string()
     }
@@ -16,7 +16,7 @@ impl SQLValue<i32> for Vec<u8> {
     }
 }
 
-impl SQLValue<String> for Vec<u8> {
+impl SqlValue<String> for Vec<u8> {
     fn column_type(_: std::marker::PhantomData<String>, size: i32) -> String {
         format!("varchar({})", size)
     }
@@ -29,9 +29,9 @@ impl SQLValue<String> for Vec<u8> {
     }
 }
 
-impl<V> SQLValue<Option<V>> for Vec<u8>
+impl<V> SqlValue<Option<V>> for Vec<u8>
 where
-    Vec<u8>: SQLValue<V>,
+    Vec<u8>: SqlValue<V>,
 {
     fn column_type(_: std::marker::PhantomData<Option<V>>, size: i32) -> String {
         Self::column_type(std::marker::PhantomData::<V>, size)
@@ -40,7 +40,7 @@ where
     fn serialize(v: Option<V>) -> Self {
         match v {
             None => vec![],
-            Some(v) => SQLValue::serialize(v),
+            Some(v) => SqlValue::serialize(v),
         }
     }
     fn deserialize(self) -> Option<V> {

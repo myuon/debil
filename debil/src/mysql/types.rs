@@ -1,10 +1,10 @@
-use crate::SQLValue;
+use crate::SqlValue;
 use failure::_core::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct MySQLValue(pub mysql_async::Value);
 
-impl SQLValue<bool> for MySQLValue {
+impl SqlValue<bool> for MySQLValue {
     fn column_type(_: PhantomData<bool>, size: i32) -> String {
         "bool".to_string()
     }
@@ -18,7 +18,7 @@ impl SQLValue<bool> for MySQLValue {
     }
 }
 
-impl SQLValue<String> for MySQLValue {
+impl SqlValue<String> for MySQLValue {
     fn column_type(_: std::marker::PhantomData<String>, size: i32) -> String {
         if size > 0 {
             format!("varchar({})", size)
@@ -36,7 +36,7 @@ impl SQLValue<String> for MySQLValue {
     }
 }
 
-impl SQLValue<i32> for MySQLValue {
+impl SqlValue<i32> for MySQLValue {
     fn column_type(_: std::marker::PhantomData<i32>, _: i32) -> String {
         "int".to_string()
     }
@@ -50,7 +50,7 @@ impl SQLValue<i32> for MySQLValue {
     }
 }
 
-impl SQLValue<u32> for MySQLValue {
+impl SqlValue<u32> for MySQLValue {
     fn column_type(_: PhantomData<u32>, size: i32) -> String {
         "int unsigned".to_string()
     }
@@ -64,7 +64,7 @@ impl SQLValue<u32> for MySQLValue {
     }
 }
 
-impl SQLValue<i64> for MySQLValue {
+impl SqlValue<i64> for MySQLValue {
     fn column_type(_: std::marker::PhantomData<i64>, _: i32) -> String {
         "bigint".to_string()
     }
@@ -78,7 +78,7 @@ impl SQLValue<i64> for MySQLValue {
     }
 }
 
-impl SQLValue<u64> for MySQLValue {
+impl SqlValue<u64> for MySQLValue {
     fn column_type(_: PhantomData<u64>, size: i32) -> String {
         "bigint unsigned".to_string()
     }
@@ -92,25 +92,25 @@ impl SQLValue<u64> for MySQLValue {
     }
 }
 
-impl<V> SQLValue<Option<V>> for MySQLValue
+impl<V> SqlValue<Option<V>> for MySQLValue
 where
-    MySQLValue: SQLValue<V>,
+    MySQLValue: SqlValue<V>,
 {
     fn column_type(_: std::marker::PhantomData<Option<V>>, size: i32) -> String {
-        <MySQLValue as SQLValue<V>>::column_type(std::marker::PhantomData::<V>, size)
+        <MySQLValue as SqlValue<V>>::column_type(std::marker::PhantomData::<V>, size)
     }
 
     fn serialize(val: Option<V>) -> MySQLValue {
         match val {
             None => MySQLValue(mysql_async::Value::NULL),
-            Some(v) => SQLValue::serialize(v),
+            Some(v) => SqlValue::serialize(v),
         }
     }
 
     fn deserialize(self) -> Option<V> {
         match self.0 {
             mysql_async::Value::NULL => None,
-            _ => Some(SQLValue::deserialize(self)),
+            _ => Some(SqlValue::deserialize(self)),
         }
     }
 }

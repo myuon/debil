@@ -1,4 +1,4 @@
-use crate::{QueryBuilder, SQLMapper, SQLTable};
+use crate::{QueryBuilder, SqlMapper, SqlTable};
 use async_trait::async_trait;
 
 pub struct Params<ValueType>(pub Vec<(String, ValueType)>);
@@ -14,12 +14,12 @@ pub trait HasNotFound {
 }
 
 #[async_trait]
-pub trait SQLConn<V: 'static + Sync + Send> {
+pub trait SqlConn<V: 'static + Sync + Send> {
     type Error: HasNotFound;
 
     async fn sql_exec(&mut self, query: String, params: Params<V>) -> Result<u64, Self::Error>;
 
-    async fn sql_query<T: SQLMapper<ValueType = V> + Sync + Send>(
+    async fn sql_query<T: SqlMapper<ValueType = V> + Sync + Send>(
         &mut self,
         query: String,
         params: Params<V>,
@@ -31,11 +31,11 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         params: Vec<Params<V>>,
     ) -> Result<(), Self::Error>;
 
-    async fn create_table<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn create_table<T: SqlTable<ValueType = V> + Sync + Send>(
         &mut self,
     ) -> Result<(), Self::Error> {
         self.sql_exec(
-            SQLTable::create_table_query(std::marker::PhantomData::<T>),
+            SqlTable::create_table_query(std::marker::PhantomData::<T>),
             Params::<V>(Vec::new()),
         )
         .await?;
@@ -43,7 +43,7 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         Ok(())
     }
 
-    async fn create<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn create<T: SqlTable<ValueType = V> + Sync + Send>(
         &mut self,
         data: T,
     ) -> Result<u64, Self::Error> {
@@ -52,7 +52,7 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         self.sql_exec(query, Params::<V>(ps)).await
     }
 
-    async fn save<T: SQLTable<ValueType = V> + Sync + Send + Clone>(
+    async fn save<T: SqlTable<ValueType = V> + Sync + Send + Clone>(
         &mut self,
         data: T,
     ) -> Result<u64, Self::Error> {
@@ -66,12 +66,12 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         }
     }
 
-    async fn load2<T: SQLTable, U: SQLMapper<ValueType = V> + Sync + Send>(
+    async fn load2<T: SqlTable, U: SqlMapper<ValueType = V> + Sync + Send>(
         &mut self,
         builder: QueryBuilder<V>,
     ) -> Result<Vec<U>, Self::Error> {
-        let schema = SQLTable::schema_of(std::marker::PhantomData::<T>);
-        let table_name = SQLTable::table_name(std::marker::PhantomData::<T>);
+        let schema = SqlTable::schema_of(std::marker::PhantomData::<T>);
+        let table_name = SqlTable::table_name(std::marker::PhantomData::<T>);
         let (query, params) = builder
             .table(table_name.clone())
             .append_selects(
@@ -84,19 +84,19 @@ pub trait SQLConn<V: 'static + Sync + Send> {
         self.sql_query::<U>(query, params).await
     }
 
-    async fn load<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn load<T: SqlTable<ValueType = V> + Sync + Send>(
         &mut self,
         builder: QueryBuilder<V>,
     ) -> Result<Vec<T>, Self::Error> {
         self.load2::<T, T>(builder).await
     }
 
-    async fn first<T: SQLTable<ValueType = V> + Sync + Send>(
+    async fn first<T: SqlTable<ValueType = V> + Sync + Send>(
         &mut self,
         builder: QueryBuilder<V>,
     ) -> Result<T, Self::Error> {
-        let schema = SQLTable::schema_of(std::marker::PhantomData::<T>);
-        let table_name = SQLTable::table_name(std::marker::PhantomData::<T>);
+        let schema = SqlTable::schema_of(std::marker::PhantomData::<T>);
+        let table_name = SqlTable::table_name(std::marker::PhantomData::<T>);
         let (query, params) = builder
             .table(table_name.clone())
             .append_selects(

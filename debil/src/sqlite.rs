@@ -1,5 +1,5 @@
 use crate as debil;
-use crate::{HasNotFound, SQLConn, SQLValue};
+use crate::{HasNotFound, SqlConn, SqlValue};
 use async_trait::async_trait;
 use failure::*;
 
@@ -11,7 +11,7 @@ impl rusqlite::ToSql for SqliteValue {
     }
 }
 
-impl SQLValue<()> for SqliteValue {
+impl SqlValue<()> for SqliteValue {
     fn column_type(_: std::marker::PhantomData<()>, _size: i32) -> String {
         "NULL".to_string()
     }
@@ -25,7 +25,7 @@ impl SQLValue<()> for SqliteValue {
     }
 }
 
-impl SQLValue<i64> for SqliteValue {
+impl SqlValue<i64> for SqliteValue {
     fn column_type(_: std::marker::PhantomData<i64>, _size: i32) -> String {
         "INTEGER".to_string()
     }
@@ -42,7 +42,7 @@ impl SQLValue<i64> for SqliteValue {
     }
 }
 
-impl SQLValue<f64> for SqliteValue {
+impl SqlValue<f64> for SqliteValue {
     fn column_type(_: std::marker::PhantomData<f64>, _size: i32) -> String {
         "REAL".to_string()
     }
@@ -59,7 +59,7 @@ impl SQLValue<f64> for SqliteValue {
     }
 }
 
-impl SQLValue<String> for SqliteValue {
+impl SqlValue<String> for SqliteValue {
     fn column_type(_: std::marker::PhantomData<String>, _size: i32) -> String {
         "TEXT".to_string()
     }
@@ -76,7 +76,7 @@ impl SQLValue<String> for SqliteValue {
     }
 }
 
-impl SQLValue<Vec<u8>> for SqliteValue {
+impl SqlValue<Vec<u8>> for SqliteValue {
     fn column_type(_: std::marker::PhantomData<Vec<u8>>, _size: i32) -> String {
         "BLOB".to_string()
     }
@@ -127,7 +127,7 @@ pub struct DebilConn {
 
 // This impl uses tokio::task::block_in_place, which could lead to a problem in some specific situations;
 #[async_trait]
-impl SQLConn<SqliteValue> for DebilConn {
+impl SqlConn<SqliteValue> for DebilConn {
     type Error = Error;
 
     async fn sql_exec(
@@ -144,7 +144,7 @@ impl SQLConn<SqliteValue> for DebilConn {
         Ok(rows as u64)
     }
 
-    async fn sql_query<T: debil::SQLMapper<ValueType = SqliteValue> + Sync + Send>(
+    async fn sql_query<T: debil::SqlMapper<ValueType = SqliteValue> + Sync + Send>(
         &mut self,
         query: String,
         params: debil::Params<SqliteValue>,

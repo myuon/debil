@@ -43,19 +43,19 @@ pub fn create_column_query(
     .join(" ")
 }
 
-pub trait SQLMapper: Sized {
+pub trait SqlMapper: Sized {
     type ValueType;
     fn map_from_sql(_: std::collections::HashMap<String, Self::ValueType>) -> Self;
 }
 
-pub trait SQLTable: SQLMapper {
+pub trait SqlTable: SqlMapper {
     fn table_name(_: std::marker::PhantomData<Self>) -> String;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(String, String, FieldAttribute)>;
 
     fn primary_key_columns(_: std::marker::PhantomData<Self>) -> Vec<String>;
 
     fn constraint_primary_key_query(ty: std::marker::PhantomData<Self>) -> String {
-        let columns = SQLTable::primary_key_columns(ty);
+        let columns = SqlTable::primary_key_columns(ty);
         format!("CONSTRAINT primary_key PRIMARY KEY({})", columns.join(","))
     }
 
@@ -66,8 +66,8 @@ pub trait SQLTable: SQLMapper {
         index_name: &'static str,
         index_keys: Vec<&'static str>,
     ) -> String {
-        let schema = SQLTable::schema_of(ty);
-        let table_name = SQLTable::table_name(ty);
+        let schema = SqlTable::schema_of(ty);
+        let table_name = SqlTable::table_name(ty);
         // search if specified keys exist
         for key in index_keys.iter() {
             if !schema
@@ -92,8 +92,8 @@ pub trait SQLTable: SQLMapper {
         index_name: &'static str,
         index_keys: Vec<&'static str>,
     ) -> String {
-        let schema = SQLTable::schema_of(ty);
-        let table_name = SQLTable::table_name(ty);
+        let schema = SqlTable::schema_of(ty);
+        let table_name = SqlTable::table_name(ty);
         // search if specified keys exist
         for key in index_keys.iter() {
             if !schema
@@ -115,18 +115,18 @@ pub trait SQLTable: SQLMapper {
     }
 
     fn create_table_query(ty: std::marker::PhantomData<Self>) -> String {
-        let schema = SQLTable::schema_of(ty);
+        let schema = SqlTable::schema_of(ty);
 
         format!(
             "CREATE TABLE IF NOT EXISTS {} ({}, {})",
-            SQLTable::table_name(ty),
+            SqlTable::table_name(ty),
             schema
                 .into_iter()
                 .map(|(name, typ, attr)| create_column_query(name, typ, attr))
                 .collect::<Vec<_>>()
                 .as_slice()
                 .join(", "),
-            SQLTable::constraint_primary_key_query(ty),
+            SqlTable::constraint_primary_key_query(ty),
         )
     }
 
@@ -176,41 +176,41 @@ pub trait SQLTable: SQLMapper {
     }
 }
 
-pub fn table_name<T: SQLTable>() -> String {
-    SQLTable::table_name(std::marker::PhantomData::<T>)
+pub fn table_name<T: SqlTable>() -> String {
+    SqlTable::table_name(std::marker::PhantomData::<T>)
 }
 
-pub fn schema_of<T: SQLTable>() -> Vec<(String, String, FieldAttribute)> {
-    SQLTable::schema_of(std::marker::PhantomData::<T>)
+pub fn schema_of<T: SqlTable>() -> Vec<(String, String, FieldAttribute)> {
+    SqlTable::schema_of(std::marker::PhantomData::<T>)
 }
 
-pub fn primary_key_columns<T: SQLTable>() -> Vec<String> {
-    SQLTable::primary_key_columns(std::marker::PhantomData::<T>)
+pub fn primary_key_columns<T: SqlTable>() -> Vec<String> {
+    SqlTable::primary_key_columns(std::marker::PhantomData::<T>)
 }
 
-pub fn create_index_query<T: SQLTable>(
+pub fn create_index_query<T: SqlTable>(
     index_name: &'static str,
     index_keys: Vec<&'static str>,
 ) -> String {
-    SQLTable::create_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
+    SqlTable::create_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
 }
 
-pub fn create_unique_index_query<T: SQLTable>(
+pub fn create_unique_index_query<T: SqlTable>(
     index_name: &'static str,
     index_keys: Vec<&'static str>,
 ) -> String {
-    SQLTable::create_unique_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
+    SqlTable::create_unique_index_query(std::marker::PhantomData::<T>, index_name, index_keys)
 }
 
-pub fn map_from_sql<T: SQLMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {
-    SQLMapper::map_from_sql(h)
+pub fn map_from_sql<T: SqlMapper>(h: std::collections::HashMap<String, T::ValueType>) -> T {
+    SqlMapper::map_from_sql(h)
 }
 
-pub fn create_table_query<T: SQLTable>() -> String {
-    SQLTable::create_table_query(std::marker::PhantomData::<T>)
+pub fn create_table_query<T: SqlTable>() -> String {
+    SqlTable::create_table_query(std::marker::PhantomData::<T>)
 }
 
-pub trait SQLValue<Type> {
+pub trait SqlValue<Type> {
     // Varchar type requires the size in the type representation, so we need size argument here
     fn column_type(_: std::marker::PhantomData<Type>, size: i32) -> String;
 
