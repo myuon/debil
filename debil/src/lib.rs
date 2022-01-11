@@ -14,6 +14,9 @@ pub mod binary;
 mod macros;
 pub use macros::*;
 
+mod query;
+pub use query::*;
+
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
