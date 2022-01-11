@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_create_index() -> Result<()> {
+    async fn test_create_and_drop_index() -> Result<()> {
         let conn = rusqlite::Connection::open_in_memory()?;
         conn.execute(
             "CREATE TABLE person (
@@ -63,6 +63,12 @@ mod tests {
 
         // test: create_index should be executed even if the index already exists
         conn.execute(&create_index("person", "name", &["name"]), [])?;
+
+        // test: drop_index should be executed
+        conn.execute(&drop_index("person", "name"), [])?;
+
+        // test: drop_index should be executed even if the index does not exists
+        conn.execute(&drop_index("person", "name"), [])?;
 
         Ok(())
     }
