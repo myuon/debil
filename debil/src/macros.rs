@@ -76,7 +76,38 @@ macro_rules! record_expr {
 #[cfg(test)]
 #[allow(dead_code)]
 mod test_record_expr {
-    use crate::{SqlMapper, SqlTable};
+    use std::convert::TryFrom;
+
+    use crate::{SqlMapper, SqlTable, SqlValue};
+
+    #[derive(Clone, Debug, PartialEq)]
+    struct Binary(Vec<u8>);
+
+    impl SqlValue<i32> for Binary {
+        fn column_type(_: std::marker::PhantomData<i32>, _: i32) -> String {
+            "int".to_string()
+        }
+
+        fn serialize(v: i32) -> Self {
+            Binary(v.to_be_bytes().to_vec())
+        }
+        fn deserialize(self) -> i32 {
+            i32::from_be_bytes(TryFrom::try_from(self.0.as_slice()).unwrap())
+        }
+    }
+
+    impl SqlValue<String> for Binary {
+        fn column_type(_: std::marker::PhantomData<String>, size: i32) -> String {
+            format!("varchar({})", size)
+        }
+
+        fn serialize(v: String) -> Self {
+            Binary(v.as_bytes().to_vec())
+        }
+        fn deserialize(self) -> String {
+            String::from_utf8(self.0).unwrap()
+        }
+    }
 
     #[derive(Default)]
     struct H {
@@ -131,7 +162,7 @@ mod test_record_expr {
             record_expr!(H, { f: 2000 }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Binary)>
             )
         );
 
@@ -140,7 +171,7 @@ mod test_record_expr {
             record_expr!(H, { f: 2000, }),
             (
                 vec!["table_H.foo = :foo".to_string()],
-                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Vec<u8>)>
+                vec![("foo".to_string(), SqlValue::serialize(2000))] as Vec<(String, Binary)>
             )
         );
 
@@ -158,7 +189,7 @@ mod test_record_expr {
                 vec![
                     ("foo".to_string(), SqlValue::serialize(2000)),
                     ("g".to_string(), SqlValue::serialize("fooo".to_string()))
-                ] as Vec<(String, Vec<u8>)>
+                ] as Vec<(String, Binary)>
             )
         );
     }
