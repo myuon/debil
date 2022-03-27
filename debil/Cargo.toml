@@ -25,4 +25,3 @@ tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros"] }
 [features]
 sqlite = ["rusqlite"]
 mysql = ["mysql_async", "futures"]
-all-database = ["sqlite", "mysql"]
