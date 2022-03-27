@@ -1,17 +1,8 @@
 # debil [![debil at crates.io](https://img.shields.io/crates/v/debil.svg)](https://crates.io/crates/debil)
 
-Lightweight ORM for Rust
+ORM aims to provide Table macro and auto migration
 
-To use a specific DB, see debil-xxx family.
-
-- [debil-mysql](https://github.com/myuon/debil-mysql)
-- [debil-dynamodb](https://github.com/myuon/debil-dynamodb)
-
-## How to use
-
-Basically `debil` provides `Table` macro and `Accessor` macro.
-
-### Table macro
+## Table macro
 
 You need to specify `sql_type` to be something that each DB crate provides.
 
@@ -28,7 +19,7 @@ struct Ex1 {
 
 This example derives some useful mapper functions for this struct. See functions in [debil's docs](https://docs.rs/debil/).
 
-### Accessor macro
+## Accessor macro
 
 Accessor macro provides safe way to access to each column. This is useful for constructing a query.
 
