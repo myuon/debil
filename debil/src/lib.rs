@@ -9,8 +9,6 @@ pub use conn::*;
 mod query_builder;
 pub use query_builder::*;
 
-pub mod binary;
-
 mod macros;
 pub use macros::*;
 

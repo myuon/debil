@@ -1,7 +1,38 @@
+use std::convert::TryFrom;
+
 use debil::*;
 
+#[derive(Clone, Debug, PartialEq)]
+struct Binary(Vec<u8>);
+
+impl SqlValue<i32> for Binary {
+    fn column_type(_: std::marker::PhantomData<i32>, _: i32) -> String {
+        "int".to_string()
+    }
+
+    fn serialize(v: i32) -> Self {
+        Binary(v.to_be_bytes().to_vec())
+    }
+    fn deserialize(self) -> i32 {
+        i32::from_be_bytes(TryFrom::try_from(self.0.as_slice()).unwrap())
+    }
+}
+
+impl SqlValue<String> for Binary {
+    fn column_type(_: std::marker::PhantomData<String>, size: i32) -> String {
+        format!("varchar({})", size)
+    }
+
+    fn serialize(v: String) -> Self {
+        Binary(v.as_bytes().to_vec())
+    }
+    fn deserialize(self) -> String {
+        String::from_utf8(self.0).unwrap()
+    }
+}
+
 #[derive(Table, PartialEq, Debug, Clone, Accessor)]
-#[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk")]
+#[sql(table_name = "ex_1", sql_type = "Binary", primary_key = "pk")]
 struct Ex1 {
     #[sql(size = 50, unique = true, not_null = true)]
     field1: String,
@@ -100,7 +131,7 @@ fn Ex1_accessor() {
 #[test]
 fn composite_primary_key() {
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    #[sql(table_name = "ex_1", sql_type = "Binary", primary_key = "pk,pk2")]
     struct Ex2 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
@@ -115,7 +146,7 @@ fn composite_primary_key() {
     );
 
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk ,pk2")]
+    #[sql(table_name = "ex_1", sql_type = "Binary", primary_key = "pk ,pk2")]
     struct Ex3 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
@@ -129,7 +160,7 @@ fn composite_primary_key() {
 #[test]
 fn add_index() {
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    #[sql(table_name = "ex_1", sql_type = "Binary", primary_key = "pk,pk2")]
     struct Ex4 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
@@ -153,7 +184,7 @@ fn add_index() {
 #[should_panic]
 fn add_index_key_not_found() {
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "ex_1", sql_type = "Vec<u8>", primary_key = "pk,pk2")]
+    #[sql(table_name = "ex_1", sql_type = "Binary", primary_key = "pk,pk2")]
     struct Ex5 {
         #[sql(size = 50, unique = true, not_null = true)]
         field1: String,
