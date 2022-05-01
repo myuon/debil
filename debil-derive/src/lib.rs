@@ -1,9 +1,12 @@
 extern crate proc_macro;
 
+use pg_table::{impl_from_row, impl_pg_table};
 use quote::quote;
 use std::collections::HashMap;
 use syn::parse::{Parse, ParseStream};
 use syn::{parse_macro_input, DeriveInput, Result};
+
+mod pg_table;
 
 struct TableAttr {
     table_name: String,
@@ -290,6 +293,20 @@ pub fn derive_record(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     };
 
     proc_macro::TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(PgTable, attributes(sql))]
+pub fn derive_pg_table(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+
+    let pg_table = impl_pg_table(ast.clone()).unwrap();
+    let from_row = impl_from_row(ast).unwrap();
+    let gen = quote! {
+        #pg_table
+        #from_row
+    };
+
+    gen.into()
 }
 
 #[proc_macro_derive(Accessor)]
