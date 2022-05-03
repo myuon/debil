@@ -2,7 +2,7 @@ use debil::{postgres::*, PgTable};
 use sqlx::{
     postgres::{PgArguments, PgPoolOptions, PgRow},
     query::Query,
-    FromRow, Postgres, Row,
+    FromRow, PgPool, Postgres, Row,
 };
 
 macro_rules! binds {
@@ -66,12 +66,56 @@ pub trait BindQuery {
         -> Query<'q, Postgres, PgArguments>;
 }
 
+pub struct Executor<T> {
+    query: String,
+    item: T,
+}
+
+impl<T: PgTable + BindQuery + Send> Executor<T> {
+    pub fn create(item: T) -> Executor<T> {
+        Executor {
+            query: format!(
+                "INSERT INTO {} ({}) VALUES ({})",
+                table_name::<T>(),
+                column_names::<T>().join(","),
+                column_names::<T>()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, _)| format!("${}", i + 1))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            item,
+        }
+    }
+
+    pub fn update(item: Partial<T>) -> Executor<Partial<T>> {
+        Executor {
+            query: format!("UPDATE {} SET {} WHERE {}", table_name::<T>(), "", ""),
+            item,
+        }
+    }
+
+    pub async fn execute(self, pool: &PgPool) -> Result<QueryResult<()>, sqlx::Error> {
+        let result = self
+            .item
+            .binds(sqlx::query(&self.query))
+            .execute(pool)
+            .await?;
+
+        Ok(QueryResult {
+            data: (),
+            rows_affected: result.rows_affected(),
+        })
+    }
+}
+
 #[tokio::test]
 async fn test_table() -> Result<(), sqlx::Error> {
     #[derive(Debug, PartialEq, PgTable, Clone, Default)]
     #[sql(table_name = "test")]
     struct Test {
-        #[sql(size = 256)]
+        #[sql(primary_key, size = 256)]
         id: String,
         #[sql(size = 1024)]
         name: String,
@@ -110,20 +154,7 @@ async fn test_table() -> Result<(), sqlx::Error> {
         created_at: 1,
     };
 
-    t1.clone()
-        .binds(sqlx::query(&format!(
-            "INSERT INTO {} ({}) VALUES ({})",
-            table_name::<Test>(),
-            column_names::<Test>().join(","),
-            column_names::<Test>()
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("${}", i + 1))
-                .collect::<Vec<_>>()
-                .join(","),
-        )))
-        .execute(&pool)
-        .await?;
+    Executor::create(t1.clone()).execute(&pool).await?;
 
     let one = sqlx::query_as::<_, Test>("SELECT * FROM test WHERE id = $1")
         .bind(t1.id.clone())

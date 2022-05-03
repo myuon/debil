@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use async_trait::async_trait;
 use sqlx::{
     encode::IsNull,
     postgres::{PgArgumentBuffer, PgTypeInfo},
@@ -88,6 +87,7 @@ select_type!(String, PgType::VarChar);
 select_type!(&str, PgType::VarChar);
 
 pub struct FieldAttribute {
+    pub primary_key: bool,
     pub size: Option<usize>,
     pub other: String,
 }
@@ -95,6 +95,7 @@ pub struct FieldAttribute {
 pub trait PgTable {
     fn table_name(_: std::marker::PhantomData<Self>) -> &'static str;
     fn schema_of(_: std::marker::PhantomData<Self>) -> Vec<(&'static str, PgType, FieldAttribute)>;
+    // fn primary_key(_: std::marker::PhantomData<Self>) -> Option<&'static str>;
 }
 
 pub fn table_name<T: PgTable>() -> &'static str {
@@ -147,33 +148,5 @@ impl<T: PgTable> Partial<T> {
 
 pub struct QueryResult<T> {
     pub data: T,
-    pub rows_affected: i64,
-}
-
-// これだとだめ
-#[async_trait]
-pub trait Executor {
-    async fn execute_sql(&self, query: &str) -> Result<QueryResult<()>, sqlx::Error>;
-
-    async fn create<T: PgTable + IntoValues + Send>(
-        &self,
-        item: T,
-    ) -> Result<QueryResult<()>, sqlx::Error>;
-
-    async fn update<T: PgTable + IntoValues + Send>(
-        &self,
-        item: Partial<T>,
-    ) -> Result<QueryResult<()>, sqlx::Error>;
-
-    async fn save<T: PgTable + IntoValues + Send + Sync + Clone>(
-        &self,
-        item: T,
-    ) -> Result<QueryResult<()>, sqlx::Error> {
-        let mut result = self.update(Partial::full(item.clone())).await?;
-        if result.rows_affected == 0 {
-            result = self.create(item).await?;
-        }
-
-        Ok(result)
-    }
+    pub rows_affected: u64,
 }
