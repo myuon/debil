@@ -1,13 +1,22 @@
 use debil::{postgres::*, PgTable};
 use sqlx::{
-    postgres::{PgPoolOptions, PgRow},
-    FromRow, Row,
+    postgres::{PgArguments, PgPoolOptions, PgRow},
+    query::Query,
+    FromRow, Postgres, Row,
 };
 
 macro_rules! binds {
-    ($q:expr,$e:expr,$($name:ident),* $(,)?) => {
-        $q$(.bind($e.$name))*
-    };
+    ($q:expr,$e:expr,$($name:ident),* $(,)?) => {{
+        let expr = $e;
+
+        {
+            $q$(.bind(expr.$name))*
+        }
+    }};
+}
+
+pub trait BindQuery {
+    fn query(self, q: &str) -> Query<'_, Postgres, PgArguments>;
 }
 
 #[tokio::test]
@@ -20,6 +29,12 @@ async fn test_table() -> Result<(), sqlx::Error> {
         #[sql(size = 1024)]
         name: String,
         created_at: i64,
+    }
+
+    impl BindQuery for Test {
+        fn query(self, q: &str) -> Query<'_, Postgres, PgArguments> {
+            binds_Test!(sqlx::query(q), self)
+        }
     }
 
     let pool = PgPoolOptions::new()
@@ -36,16 +51,14 @@ async fn test_table() -> Result<(), sqlx::Error> {
         created_at: 1,
     };
 
-    binds_Test!(
-        sqlx::query(&format!(
+    t1.clone()
+        .query(&format!(
             "INSERT INTO {} ({}) VALUES ($1, $2, $3)",
             table_name::<Test>(),
             column_names::<Test>().join(","),
-        )),
-        t1.clone(),
-    )
-    .execute(&pool)
-    .await?;
+        ))
+        .execute(&pool)
+        .await?;
 
     let one = sqlx::query_as::<_, Test>("SELECT * FROM test WHERE id = $1")
         .bind(t1.id.clone())
