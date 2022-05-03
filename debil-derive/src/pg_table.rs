@@ -115,10 +115,11 @@ pub fn impl_binds(ast: syn::DeriveInput) -> Result<TokenStream> {
         })
         .collect::<Vec<_>>();
 
-    let macro_name = Ident::new(&format!("binds_{}", name), Span::call_site());
+    let binds_macro_name = Ident::new(&format!("binds_{}", name), Span::call_site());
+    let binds_cond_macro_name = Ident::new(&format!("binds_cond_{}", name), Span::call_site());
 
     let gen = quote! {
-        macro_rules! #macro_name {
+        macro_rules! #binds_macro_name {
             ($q:expr,$e:expr $(,)?) => {
                 binds!(
                     $q,
@@ -127,17 +128,16 @@ pub fn impl_binds(ast: syn::DeriveInput) -> Result<TokenStream> {
                 )
             };
         }
-    };
 
-    Ok(gen.into())
-}
-
-pub fn impl_executor(ast: syn::DeriveInput) -> Result<TokenStream> {
-    let name = &ast.ident;
-    let macro_name = Ident::new(&format!("binds_{}", name), Span::call_site());
-
-    let gen = quote! {
-        impl Executor for #name {
+        macro_rules! #binds_cond_macro_name {
+            ($q:expr,$e:expr,$ns:expr,$($name:ident),* $(,)?) => {{
+                binds_cond!(
+                    $q,
+                    $e,
+                    $ns,
+                    #(#fields)*
+                )
+            }};
         }
     };
 

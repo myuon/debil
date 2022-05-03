@@ -8,15 +8,62 @@ use sqlx::{
 macro_rules! binds {
     ($q:expr,$e:expr,$($name:ident),* $(,)?) => {{
         let expr = $e;
-
-        {
-            $q$(.bind(expr.$name))*
-        }
+        $q$(.bind(expr.$name))*
     }};
 }
 
+macro_rules! binds_cond {
+    ($q:expr,$e:expr,$ns:expr,$($name:ident),* $(,)?) => {{
+        let expr = $e;
+        let mut query = $q;
+
+        $(if $ns.contains(&stringify!($name)) {
+            query = query.bind(expr.$name);
+        })*
+
+        query
+    }};
+}
+
+macro_rules! partial {
+    ($name:ident, {$($body:tt)*}) => {
+        partial!(@wrapper, $name, $($body)*)
+    };
+
+    (@wrapper, $name:ident, $($body:tt)*) => {
+        {
+            let mut result = $name::default();
+            let mut columns = vec![];
+
+            partial!(@record_expr result, columns, $($body)*)
+        }
+    };
+
+    (@record_expr $result:ident, $params:ident, $field:ident : $e:expr $(,)?) => {
+        {
+            $result.$field = $e;
+            $params.push(stringify!($field));
+
+            Partial {
+                data: $result,
+                columns: $params,
+            }
+        }
+    };
+
+    (@record_expr $result:ident, $params:ident, $field:ident : $e:expr, $($tails:tt)*) => {
+        {
+            $result.$field = $e;
+            $params.push(stringify!($field));
+
+            record_expr!(@record_expr $result, $params, $($tails)*)
+        }
+    };
+}
+
 pub trait BindQuery {
-    fn query(self, q: &str) -> Query<'_, Postgres, PgArguments>;
+    fn binds<'q>(self, query: Query<'q, Postgres, PgArguments>)
+        -> Query<'q, Postgres, PgArguments>;
 }
 
 #[tokio::test]
@@ -32,8 +79,20 @@ async fn test_table() -> Result<(), sqlx::Error> {
     }
 
     impl BindQuery for Test {
-        fn query(self, q: &str) -> Query<'_, Postgres, PgArguments> {
-            binds_Test!(sqlx::query(q), self)
+        fn binds<'q>(
+            self,
+            query: Query<'q, Postgres, PgArguments>,
+        ) -> Query<'q, Postgres, PgArguments> {
+            binds_Test!(query, self)
+        }
+    }
+
+    impl BindQuery for Partial<Test> {
+        fn binds<'q>(
+            self,
+            query: Query<'q, Postgres, PgArguments>,
+        ) -> Query<'q, Postgres, PgArguments> {
+            binds_cond_Test!(query, self.data, self.columns,)
         }
     }
 
@@ -52,11 +111,17 @@ async fn test_table() -> Result<(), sqlx::Error> {
     };
 
     t1.clone()
-        .query(&format!(
-            "INSERT INTO {} ({}) VALUES ($1, $2, $3)",
+        .binds(sqlx::query(&format!(
+            "INSERT INTO {} ({}) VALUES ({})",
             table_name::<Test>(),
             column_names::<Test>().join(","),
-        ))
+            column_names::<Test>()
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("${}", i + 1))
+                .collect::<Vec<_>>()
+                .join(","),
+        )))
         .execute(&pool)
         .await?;
 
@@ -67,14 +132,10 @@ async fn test_table() -> Result<(), sqlx::Error> {
 
     assert_eq!(one, t1);
 
-    binds!(
-        sqlx::query("UPDATE test SET name = $1 WHERE id = $2"),
-        Test {
-            name: "updated".to_string(),
-            ..Default::default()
-        },
-        name,
-    )
+    partial!(Test, {
+        id: "updated".to_string(),
+    })
+    .binds(sqlx::query("UPDATE test SET name = $1 WHERE id = $2"))
     .bind(t1.id.clone())
     .execute(&pool)
     .await?;

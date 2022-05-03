@@ -132,8 +132,8 @@ pub fn drop_table_query<T: PgTable>() -> String {
 }
 
 pub struct Partial<T> {
-    data: T,
-    columns: Vec<&'static str>,
+    pub data: T,
+    pub columns: Vec<&'static str>,
 }
 
 impl<T: PgTable> Partial<T> {
