@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use sqlx::{
     encode::IsNull,
     postgres::{PgArgumentBuffer, PgTypeInfo},
-    Encode, PgPool, Postgres, Type,
+    Encode, Postgres, Type,
 };
 
 pub enum PgType {
@@ -150,6 +150,7 @@ pub struct QueryResult<T> {
     pub rows_affected: i64,
 }
 
+// これだとだめ
 #[async_trait]
 pub trait Executor {
     async fn execute_sql(&self, query: &str) -> Result<QueryResult<()>, sqlx::Error>;

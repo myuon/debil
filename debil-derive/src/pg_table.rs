@@ -95,3 +95,51 @@ pub fn impl_from_row(ast: syn::DeriveInput) -> Result<TokenStream> {
 
     Ok(gen.into())
 }
+
+pub fn impl_binds(ast: syn::DeriveInput) -> Result<TokenStream> {
+    let name = &ast.ident;
+
+    let schema = match ast.data {
+        syn::Data::Struct(ds) => ds.fields,
+        syn::Data::Enum(_) => todo!(),
+        syn::Data::Union(_) => todo!(),
+    };
+    let fields = schema
+        .into_iter()
+        .map(|field| {
+            let label = field.ident.unwrap();
+
+            quote! {
+                #label,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let macro_name = Ident::new(&format!("binds_{}", name), Span::call_site());
+
+    let gen = quote! {
+        macro_rules! #macro_name {
+            ($q:expr,$e:expr $(,)?) => {
+                binds!(
+                    $q,
+                    $e,
+                    #(#fields)*
+                )
+            };
+        }
+    };
+
+    Ok(gen.into())
+}
+
+pub fn impl_executor(ast: syn::DeriveInput) -> Result<TokenStream> {
+    let name = &ast.ident;
+    let macro_name = Ident::new(&format!("binds_{}", name), Span::call_site());
+
+    let gen = quote! {
+        impl Executor for #name {
+        }
+    };
+
+    Ok(gen.into())
+}

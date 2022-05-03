@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use pg_table::{impl_from_row, impl_pg_table};
+use pg_table::{impl_binds, impl_from_row, impl_pg_table};
 use quote::quote;
 use std::collections::HashMap;
 use syn::parse::{Parse, ParseStream};
@@ -300,10 +300,13 @@ pub fn derive_pg_table(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
     let ast = parse_macro_input!(input as DeriveInput);
 
     let pg_table = impl_pg_table(ast.clone()).unwrap();
-    let from_row = impl_from_row(ast).unwrap();
+    let from_row = impl_from_row(ast.clone()).unwrap();
+    let binds_macro = impl_binds(ast).unwrap();
+
     let gen = quote! {
         #pg_table
         #from_row
+        #binds_macro
     };
 
     gen.into()
