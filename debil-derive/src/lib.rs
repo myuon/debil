@@ -31,7 +31,7 @@ impl AttrInput {
         let mut table = TableAttr {
             table_name,
             primary_key: vec![],
-            sql_type: quote! { Vec<u8> },
+            sql_type: quote! { DefaultSqlValue },
         };
 
         for attr in self.attrs.into_iter() {

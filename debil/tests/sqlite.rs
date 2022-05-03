@@ -7,7 +7,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_create_table() -> Result<(), Error> {
         #[derive(Table, PartialEq, Debug)]
-        #[sql(table_name = "test", sql_type = "SqliteValue", primary_key = "id")]
+        #[sql(table_name = "test", primary_key = "id")]
         struct Test {
             id: i64,
             name: String,

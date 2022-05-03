@@ -193,3 +193,5 @@ impl SqlConn<SqliteValue> for DebilConn {
         Ok(())
     }
 }
+
+pub type DefaultSqlValue = SqliteValue;

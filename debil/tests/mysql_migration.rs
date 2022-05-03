@@ -5,11 +5,7 @@ mod tests {
     use mysql_async::OptsBuilder;
 
     #[derive(Table)]
-    #[sql(
-        table_name = "migration_test",
-        sql_type = "MySQLValue",
-        primary_key = "pk"
-    )]
+    #[sql(table_name = "migration_test", primary_key = "pk")]
     struct Before {
         n: i32,
         #[sql(size = 10)]
@@ -18,11 +14,7 @@ mod tests {
     }
 
     #[derive(Table)]
-    #[sql(
-        table_name = "migration_test",
-        sql_type = "MySQLValue",
-        primary_key = "pk"
-    )]
+    #[sql(table_name = "migration_test", primary_key = "pk")]
     struct After {
         n: i64,
         #[sql(size = 100)]

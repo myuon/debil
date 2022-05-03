@@ -5,7 +5,7 @@ mod tests {
     use mysql_async::OptsBuilder;
 
     #[derive(Table, PartialEq, Debug, Clone)]
-    #[sql(table_name = "user", sql_type = "MySQLValue", primary_key = "user_id")]
+    #[sql(table_name = "user", primary_key = "user_id")]
     struct User {
         #[sql(size = 50)]
         user_id: String,
@@ -17,11 +17,7 @@ mod tests {
     }
 
     #[derive(Table, Clone)]
-    #[sql(
-        table_name = "user_item_relation",
-        sql_type = "MySQLValue",
-        primary_key = "user_id, item_id"
-    )]
+    #[sql(table_name = "user_item_relation", primary_key = "user_id, item_id")]
     struct UserItem {
         #[sql(size = 50)]
         user_id: String,
