@@ -4,9 +4,15 @@ use sqlx::{
     FromRow, Row,
 };
 
+macro_rules! binds {
+    ($q:expr,$e:expr,$($name:ident),*) => {
+        $q$(.bind($e.$name))*
+    };
+}
+
 #[tokio::test]
 async fn test_table() -> Result<(), sqlx::Error> {
-    #[derive(Debug, PartialEq, PgTable)]
+    #[derive(Debug, PartialEq, PgTable, Clone, Default)]
     #[sql(table_name = "test")]
     struct Test {
         #[sql(size = 256)]
@@ -30,12 +36,19 @@ async fn test_table() -> Result<(), sqlx::Error> {
         created_at: 1,
     };
 
-    sqlx::query("INSERT INTO test (id, name, created_at) VALUES ($1, $2, $3)")
-        .bind(t1.id.clone())
-        .bind(t1.name.clone())
-        .bind(t1.created_at.clone())
-        .execute(&pool)
-        .await?;
+    binds!(
+        sqlx::query(&format!(
+            "INSERT INTO {} ({}) VALUES ($1, $2, $3)",
+            table_name::<Test>(),
+            column_names::<Test>().join(","),
+        )),
+        t1.clone(),
+        id,
+        name,
+        created_at
+    )
+    .execute(&pool)
+    .await?;
 
     let one = sqlx::query_as::<_, Test>("SELECT * FROM test WHERE id = $1")
         .bind(t1.id.clone())
@@ -43,6 +56,25 @@ async fn test_table() -> Result<(), sqlx::Error> {
         .await?;
 
     assert_eq!(one, t1);
+
+    binds!(
+        sqlx::query("UPDATE test SET name = $1 WHERE id = $2"),
+        Test {
+            name: "updated".to_string(),
+            ..Default::default()
+        },
+        name
+    )
+    .bind(t1.id.clone())
+    .execute(&pool)
+    .await?;
+
+    let two = sqlx::query_as::<_, Test>("SELECT * FROM test WHERE id = $1")
+        .bind(t1.id.clone())
+        .fetch_one(&pool)
+        .await?;
+
+    assert_eq!(two.name, "updated");
 
     sqlx::query(&drop_table_query::<Test>())
         .execute(&pool)
